@@ -1,0 +1,9 @@
+{
+  "id": "obsidian-ado-plugin",
+  "name": "Obsidian ADO Plugin",
+  "version": "1.0.0",
+  "description": "A plugin for Obsidian to manage epics and features in Azure DevOps.",
+  "author": "Your Name",
+  "main": "main.js",
+  "minAppVersion": "0.12.0"
+}

@@ -1,4 +1,6 @@
 import { Plugin, App, Editor, Notice, MarkdownView, Modal, MarkdownPostProcessorContext } from 'obsidian';
+import { ViewPlugin, ViewUpdate, Decoration, DecorationSet, WidgetType, EditorView } from "@codemirror/view";
+import { RangeSetBuilder } from "@codemirror/state";
 import ADOApi from './ado/api.js';
 import { EpicsManager } from './ado/epics.js';
 import { FeaturesManager } from './ado/features.js';
@@ -97,6 +99,9 @@ export default class ADOPlugin extends Plugin {
                 }
             }
         });
+
+        console.log('Registering Epic Anchor Editor Extension');
+        this.registerEditorExtension(epicAnchorViewPlugin(this));
     }
 
     async loadSettings() {
@@ -170,3 +175,101 @@ function insertEpicAnchor(app: App, editor: Editor) {
         editor.replaceSelection(`<<#${epicNumber}>>`);
     }).open();
 }
+
+// CodeMirror 6 ViewPlugin for rendering Epic Anchors as buttons in Edit Mode
+
+class EpicAnchorButtonWidget extends WidgetType {
+    constructor(readonly epicId: string, readonly plugin: ADOPlugin) {
+        super();
+    }
+
+    toDOM(view: EditorView): HTMLElement {
+        const button = document.createElement('button');
+        button.classList.add('epic-anchor-button-editor'); // Different class for editor if needed
+        button.textContent = `Epic #${this.epicId}`;
+        button.style.cursor = 'pointer';
+        // Add any other styling as needed, e.g., from your postprocessor
+        // button.style.backgroundColor = 'var(--interactive-accent)';
+        // button.style.color = 'var(--text-on-accent)';
+        // button.style.border = 'none';
+        // button.style.borderRadius = '3px';
+        // button.style.padding = '1px 6px';
+        // button.style.fontSize = '0.9em';
+        // button.style.margin = '0 2px';
+
+
+        button.onclick = (event) => {
+            event.preventDefault(); // Prevent editor from losing focus or other default actions
+            console.log(`Editor Epic Anchor Button - Clicked Epic #${this.epicId}`);
+            const orgUrl = this.plugin.settings?.organizationUrl;
+            if (!orgUrl) {
+                new Notice('Azure DevOps Organization URL is not set in plugin settings. Please configure it.');
+                console.warn('Editor Epic Anchor Button - Organization URL not set.');
+                return;
+            }
+            const normalizedOrgUrl = orgUrl.replace(/\/+$/, ''); // Remove trailing slashes
+            const epicUrl = `${normalizedOrgUrl}/_workitems/edit/${this.epicId}`;
+            console.log(`Editor Epic Anchor Button - Opening URL: ${epicUrl}`);
+            window.open(epicUrl, '_blank');
+        };
+        return button;
+    }
+
+    eq(other: EpicAnchorButtonWidget): boolean {
+        return other.epicId === this.epicId && other.plugin === this.plugin;
+    }
+
+    ignoreEvent(event: Event): boolean {
+        // Handle click events, ignore others for widget interaction
+        return !(event instanceof MouseEvent && event.type === "click");
+    }
+}
+
+function epicAnchorDecorations(view: EditorView, plugin: ADOPlugin) {
+    const builder = new RangeSetBuilder<Decoration>();
+    const anchorRegex = /<<#(\d+)>>/g;
+
+    for (const { from, to } of view.visibleRanges) {
+        const text = view.state.doc.sliceString(from, to);
+        let match;
+        while ((match = anchorRegex.exec(text)) !== null) {
+            const anchorStart = from + match.index;
+            const anchorEnd = anchorStart + match[0].length;
+            const epicId = match[1];
+
+            console.log(`Editor Epic Anchor - Found: ${match[0]} (ID: ${epicId}) at ${anchorStart}-${anchorEnd}`);
+
+            builder.add(
+                anchorStart,
+                anchorEnd,
+                Decoration.replace({
+                    widget: new EpicAnchorButtonWidget(epicId, plugin),
+                    inclusive: false, // Or true, depending on desired behavior with selections
+                    block: false
+                })
+            );
+        }
+    }
+    return builder.finish();
+}
+
+const epicAnchorViewPlugin = (plugin: ADOPlugin) => ViewPlugin.fromClass(
+    class {
+        decorations: DecorationSet;
+
+        constructor(view: EditorView) {
+            console.log('Editor Epic Anchor ViewPlugin - Initialized');
+            this.decorations = epicAnchorDecorations(view, plugin);
+        }
+
+        update(update: ViewUpdate) {
+            if (update.docChanged || update.viewportChanged) {
+                console.log('Editor Epic Anchor ViewPlugin - Updating decorations');
+                this.decorations = epicAnchorDecorations(update.view, plugin);
+            }
+        }
+    },
+    {
+        decorations: v => v.decorations,
+    }
+);

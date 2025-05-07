@@ -4,9 +4,9 @@
   "description": "An Obsidian plugin to manage epics and features in Azure DevOps.",
   "main": "dist/main.js",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:obsidian",
+    "build": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:obsidian --external:@codemirror/state --external:@codemirror/view",
     "postbuild": "node scripts/copy-to-vault.js",
-    "watch": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:obsidian --watch",
+    "watch": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:obsidian --external:@codemirror/state --external:@codemirror/view --watch",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "keywords": [

@@ -22,4 +22,9 @@ export class EpicsManager {
         const response = await this.adoApi.get<Epic[]>('/epics');
         return response.data;
     }
+
+    async fetchEpicById(epicId: string): Promise<Epic> {
+        const response = await this.adoApi.get<Epic>(`/epics/${epicId}`);
+        return response.data;
+    }
 }

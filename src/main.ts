@@ -1,14 +1,15 @@
-import { Plugin, App, Editor, Notice, MarkdownView, Modal, MarkdownPostProcessorContext } from 'obsidian';
+import { Plugin, App, Editor, Notice, MarkdownView, Modal, MarkdownPostProcessorContext, TFile } from 'obsidian';
 import { ViewPlugin, ViewUpdate, Decoration, DecorationSet, WidgetType, EditorView } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import ADOApi from './ado/api.js';
 import { EpicsManager } from './ado/epics.js';
 import { FeaturesManager } from './ado/features.js';
 import SettingsTab from './ui/settingsTab.js';
+import { Epic } from './types/index.js';
 
 export default class ADOPlugin extends Plugin {
-    private adoApi!: ADOApi;
-    private epicsManager!: EpicsManager;
+    public adoApi!: ADOApi; // Changed from private to public
+    public epicsManager!: EpicsManager; // Changed from private to public
     private featuresManager!: FeaturesManager;
     public settings: any;
 
@@ -65,18 +66,39 @@ export default class ADOPlugin extends Plugin {
                 const button = document.createElement('button');
                 button.classList.add('epic-anchor-button');
                 button.textContent = `Epic #${epicId}`;
-                button.onclick = () => {
+                button.onclick = async () => {
                     console.log(`Epic Anchor Post Processor - Button for Epic #${epicId} clicked.`);
-                    const orgUrl = this.settings?.organizationUrl;
-                    if (!orgUrl) {
-                        new Notice('Azure DevOps Organization URL is not set in plugin settings. Please configure it.');
-                        console.warn('Epic Anchor Post Processor - Organization URL not set.');
-                        return;
+                    const originalButtonText = button.textContent;
+                    button.textContent = 'Loading...';
+                    button.disabled = true;
+
+                    try {
+                        if (!this.settings?.organizationUrl) {
+                            new Notice('Azure DevOps Organization URL is not set in plugin settings.');
+                            button.textContent = originalButtonText;
+                            button.disabled = false;
+                            return;
+                        }
+                         if (!this.settings?.pat) {
+                            new Notice('Azure DevOps PAT is not set in plugin settings.');
+                            button.textContent = originalButtonText;
+                            button.disabled = false;
+                            return;
+                        }
+                        // Ensure API client is configured with latest settings
+                        this.adoApi.setBaseUrl(this.settings.organizationUrl);
+                        this.adoApi.setPersonalAccessToken(this.settings.pat);
+
+                        const epicDetails = await this.epicsManager.fetchEpicById(epicId);
+                        console.log(`Epic Anchor Post Processor - Fetched epic details for #${epicId}:`, epicDetails);
+                        createAndShowEpicPopover(button, epicDetails, this);
+                    } catch (error) {
+                        console.error(`Epic Anchor Post Processor - Error fetching epic #${epicId}:`, error);
+                        new Notice(`Failed to fetch Epic #${epicId}. See console for details.`);
+                    } finally {
+                        button.textContent = originalButtonText;
+                        button.disabled = false;
                     }
-                    const normalizedOrgUrl = orgUrl.replace(/\/+$/, ''); // Remove trailing slashes
-                    const epicUrl = `${normalizedOrgUrl}/_workitems/edit/${epicId}`;
-                    console.log(`Epic Anchor Post Processor - Opening URL: ${epicUrl}`);
-                    window.open(epicUrl, '_blank');
                 };
 
                 // If the entire text node is the anchor
@@ -176,6 +198,99 @@ function insertEpicAnchor(app: App, editor: Editor) {
     }).open();
 }
 
+// --- Popover Logic ---
+let currentEpicPopover: HTMLElement | null = null;
+let popoverDocumentClickHandler: ((event: MouseEvent) => void) | null = null;
+
+function closeCurrentEpicPopover() {
+    if (currentEpicPopover) {
+        currentEpicPopover.remove();
+        currentEpicPopover = null;
+    }
+    if (popoverDocumentClickHandler) {
+        document.removeEventListener('click', popoverDocumentClickHandler);
+        popoverDocumentClickHandler = null;
+    }
+}
+
+function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin: ADOPlugin) {
+    closeCurrentEpicPopover(); // Close any existing popover
+
+    const popover = document.createElement('div');
+    popover.classList.add('epic-details-popover');
+    popover.style.position = 'absolute';
+    popover.style.border = '1px solid var(--background-modifier-border)';
+    popover.style.backgroundColor = 'var(--background-secondary)';
+    popover.style.padding = '10px';
+    popover.style.borderRadius = '5px';
+    popover.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    popover.style.zIndex = '1000'; // Ensure it's on top
+    popover.style.maxWidth = '400px';
+    popover.style.overflowY = 'auto';
+    popover.style.maxHeight = '300px';
+
+
+    let contentHtml = `<h4>Epic #${epic.id}: ${epic.title}</h4>`;
+    contentHtml += '<table>';
+    contentHtml += `<tr><td><strong>State:</strong></td><td>${epic.state || 'N/A'}</td></tr>`;
+    contentHtml += `<tr><td style="vertical-align: top;"><strong>Description:</strong></td><td>${epic.description ? epic.description.replace(/\n/g, '<br>') : 'N/A'}</td></tr>`;
+    contentHtml += `<tr><td><strong>Created:</strong></td><td>${epic.createdDate ? new Date(epic.createdDate).toLocaleDateString() : 'N/A'}</td></tr>`;
+    contentHtml += `<tr><td><strong>Updated:</strong></td><td>${epic.updatedDate ? new Date(epic.updatedDate).toLocaleDateString() : 'N/A'}</td></tr>`;
+    contentHtml += '</table>';
+    
+    const openInAdoButton = document.createElement('button');
+    openInAdoButton.textContent = 'Open in ADO';
+    openInAdoButton.style.marginTop = '10px';
+    openInAdoButton.onclick = () => {
+        const orgUrl = plugin.settings?.organizationUrl;
+        if (!orgUrl) {
+            new Notice('Azure DevOps Organization URL is not set.');
+            return;
+        }
+        const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
+        window.open(`${normalizedOrgUrl}/_workitems/edit/${epic.id}`, '_blank');
+        closeCurrentEpicPopover();
+    };
+
+    popover.innerHTML = contentHtml;
+    popover.appendChild(openInAdoButton);
+
+    document.body.appendChild(popover);
+    currentEpicPopover = popover;
+
+    // Position popover near the button
+    const rect = targetButton.getBoundingClientRect();
+    popover.style.top = `${rect.bottom + window.scrollY + 5}px`;
+    popover.style.left = `${rect.left + window.scrollX}px`;
+
+    // Adjust if it goes off-screen
+    const popoverRect = popover.getBoundingClientRect();
+    if (popoverRect.right > window.innerWidth - 10) {
+        popover.style.left = `${window.innerWidth - popoverRect.width - 10 + window.scrollX}px`;
+    }
+    if (popoverRect.left < 10) {
+        popover.style.left = `${10 + window.scrollX}px`;
+    }
+     if (popoverRect.bottom > window.innerHeight -10) {
+        popover.style.top = `${rect.top + window.scrollY - popoverRect.height - 5}px`; // Show above if not enough space below
+    }
+
+
+    // Click outside to close
+    popoverDocumentClickHandler = (event: MouseEvent) => {
+        if (currentEpicPopover && !currentEpicPopover.contains(event.target as Node) && event.target !== targetButton) {
+            closeCurrentEpicPopover();
+        }
+    };
+    // Use setTimeout to allow the current click event (that opened the popover) to propagate
+    setTimeout(() => {
+        if (popoverDocumentClickHandler) { // Check if it hasn't been cleared by another rapid click
+            document.addEventListener('click', popoverDocumentClickHandler);
+        }
+    }, 0);
+}
+
+
 // CodeMirror 6 ViewPlugin for rendering Epic Anchors as buttons in Edit Mode
 
 class EpicAnchorButtonWidget extends WidgetType {
@@ -198,19 +313,40 @@ class EpicAnchorButtonWidget extends WidgetType {
         // button.style.margin = '0 2px';
 
 
-        button.onclick = (event) => {
-            event.preventDefault(); // Prevent editor from losing focus or other default actions
+        button.onclick = async (event) => {
+            event.preventDefault();
             console.log(`Editor Epic Anchor Button - Clicked Epic #${this.epicId}`);
-            const orgUrl = this.plugin.settings?.organizationUrl;
-            if (!orgUrl) {
-                new Notice('Azure DevOps Organization URL is not set in plugin settings. Please configure it.');
-                console.warn('Editor Epic Anchor Button - Organization URL not set.');
-                return;
+            const originalButtonText = button.textContent;
+            button.textContent = 'Loading...';
+            button.disabled = true;
+
+            try {
+                if (!this.plugin.settings?.organizationUrl) {
+                    new Notice('Azure DevOps Organization URL is not set in plugin settings.');
+                    button.textContent = originalButtonText;
+                    button.disabled = false;
+                    return;
+                }
+                if (!this.plugin.settings?.pat) {
+                    new Notice('Azure DevOps PAT is not set in plugin settings.');
+                    button.textContent = originalButtonText;
+                    button.disabled = false;
+                    return;
+                }
+                // Ensure API client is configured with latest settings
+                this.plugin.adoApi.setBaseUrl(this.plugin.settings.organizationUrl);
+                this.plugin.adoApi.setPersonalAccessToken(this.plugin.settings.pat);
+
+                const epicDetails = await this.plugin.epicsManager.fetchEpicById(this.epicId);
+                console.log(`Editor Epic Anchor Button - Fetched epic details for #${this.epicId}:`, epicDetails);
+                createAndShowEpicPopover(button, epicDetails, this.plugin);
+            } catch (error) {
+                console.error(`Editor Epic Anchor Button - Error fetching epic #${this.epicId}:`, error);
+                new Notice(`Failed to fetch Epic #${this.epicId}. See console for details.`);
+            } finally {
+                button.textContent = originalButtonText;
+                button.disabled = false;
             }
-            const normalizedOrgUrl = orgUrl.replace(/\/+$/, ''); // Remove trailing slashes
-            const epicUrl = `${normalizedOrgUrl}/_workitems/edit/${this.epicId}`;
-            console.log(`Editor Epic Anchor Button - Opening URL: ${epicUrl}`);
-            window.open(epicUrl, '_blank');
         };
         return button;
     }

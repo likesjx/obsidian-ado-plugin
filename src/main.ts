@@ -1,4 +1,4 @@
-import { Plugin, App, Editor, Notice, MarkdownView, Modal } from 'obsidian';
+import { Plugin, App, Editor, Notice, MarkdownView, Modal, MarkdownPostProcessorContext } from 'obsidian';
 import ADOApi from './ado/api.js';
 import { EpicsManager } from './ado/epics.js';
 import { FeaturesManager } from './ado/features.js';
@@ -33,6 +33,60 @@ export default class ADOPlugin extends Plugin {
             name: 'Insert Epic Anchor',
             editorCallback: (editor, view) => {
                 insertEpicAnchor(this.app, editor);
+            }
+        });
+
+        console.log('Registering Epic Anchor Post Processor');
+        this.registerMarkdownPostProcessor((element: HTMLElement, context: MarkdownPostProcessorContext) => {
+            console.log('Epic Anchor Post Processor - Processing element:', element);
+            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+            let node;
+            const nodesToReplace: {node: Node, epicId: string, fullMatch: string}[] = [];
+
+            while (node = walker.nextNode()) {
+                if (node.nodeValue) {
+                    const regex = /<<#(\d+)>>/g;
+                    let match;
+                    // Find all matches in the current text node
+                    while ((match = regex.exec(node.nodeValue)) !== null) {
+                        console.log(`Epic Anchor Post Processor - Found anchor: ${match[0]} with ID: ${match[1]} in node:`, node);
+                        nodesToReplace.push({ node, epicId: match[1], fullMatch: match[0] });
+                    }
+                }
+            }
+
+            // Perform replacements after iterating to avoid issues with modifying the DOM during traversal
+            for (const item of nodesToReplace) {
+                const { node, epicId, fullMatch } = item;
+                if (!node.parentElement) continue; // Skip if node is detached
+
+                const button = document.createElement('button');
+                button.classList.add('epic-anchor-button');
+                button.textContent = `Epic #${epicId}`;
+                button.onclick = () => {
+                    new Notice(`Clicked Epic #${epicId}`);
+                    console.log(`Epic Anchor Post Processor - Button for Epic #${epicId} clicked.`);
+                    // Potentially open epic details or navigate
+                };
+
+                // If the entire text node is the anchor
+                if (node.nodeValue === fullMatch) {
+                    console.log(`Epic Anchor Post Processor - Replacing entire node with button for Epic #${epicId}`);
+                    node.parentElement.replaceChild(button, node);
+                } else {
+                    // If the anchor is part of a larger text node, split the node
+                    const parts = node.nodeValue!.split(fullMatch);
+                    const parent = node.parentElement;
+                    
+                    console.log(`Epic Anchor Post Processor - Splitting node and inserting button for Epic #${epicId}`);
+                    
+                    parent.insertBefore(document.createTextNode(parts[0]), node);
+                    parent.insertBefore(button, node);
+                    if (parts.length > 1 && parts[1].length > 0) {
+                         parent.insertBefore(document.createTextNode(parts[1]), node);
+                    }
+                    parent.removeChild(node); // Remove the original combined text node
+                }
             }
         });
     }

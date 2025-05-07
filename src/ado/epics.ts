@@ -1,5 +1,5 @@
-import ADOApi from './api';
-import { Epic } from '../types';
+import ADOApi from './api.js';
+import { Epic } from '../types/index.js';
 
 export class EpicsManager {
     constructor(private adoApi: ADOApi) {}

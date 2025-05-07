@@ -1,5 +1,5 @@
-import ADOApi from './api';
-import { Feature } from '../types';
+import ADOApi from './api.js';
+import { Feature } from '../types/index.js';
 
 export class FeaturesManager {
     constructor(private adoApi: ADOApi) {}

@@ -17,8 +17,9 @@ export default class ADOPlugin extends Plugin {
         await this.loadSettings();
 
         this.adoApi = new ADOApi();
-        this.epicsManager = new EpicsManager(this.adoApi);
-        this.featuresManager = new FeaturesManager(this.adoApi);
+        // Pass settings to the managers
+        this.epicsManager = new EpicsManager(this.adoApi, this.settings);
+        this.featuresManager = new FeaturesManager(this.adoApi, this.settings); // Proactively updated
 
         this.addRibbonIcon('dice', 'Manage Epics', async () => {
             // Logic to manage epics

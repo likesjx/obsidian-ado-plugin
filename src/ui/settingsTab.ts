@@ -17,6 +17,7 @@ export default class SettingsTab extends PluginSettingTab {
         const settings = this.plugin.settings || {};
         const pat = settings.pat || '';
         const organizationUrl = settings.organizationUrl || '';
+        const projectName = settings.projectName || ''; // Added for Project Name
         const refreshInterval = (settings.refreshInterval !== undefined && settings.refreshInterval !== null) ? settings.refreshInterval : 15;
 
         new Setting(this.containerEl)
@@ -28,6 +29,18 @@ export default class SettingsTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     if (!this.plugin.settings) this.plugin.settings = {};
                     this.plugin.settings.pat = value;
+                    await this.plugin.saveSettings();
+                }));
+        
+        new Setting(this.containerEl)
+            .setName('ADO Project Name')
+            .setDesc('Enter your Azure DevOps Project Name.')
+            .addText(text => text
+                .setPlaceholder('Enter your Project Name')
+                .setValue(projectName)
+                .onChange(async (value) => {
+                    if (!this.plugin.settings) this.plugin.settings = {};
+                    this.plugin.settings.projectName = value;
                     await this.plugin.saveSettings();
                 }));
 

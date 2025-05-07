@@ -2,8 +2,8 @@
   "id": "obsidian-ado-plugin",
   "name": "Obsidian ADO Plugin",
   "version": "1.0.0",
-  "description": "A plugin for Obsidian to manage epics and features in Azure DevOps.",
-  "author": "Your Name",
+  "description": "A plugin for Obsidian to manage epics and features in Azure DevOps.\n\nFeatures:\n- Manage Epics: Create, update, and delete epics in Azure DevOps.\n- Manage Features: Create, update, and delete features associated with epics.\n- User Settings: Customize plugin settings through a dedicated settings tab.\n\nConfiguration:\n- Set your Azure DevOps Personal Access Token, Organization URL, and refresh interval in the plugin settings tab after enabling the plugin.\n- Access plugin features from the command palette or ribbon icons.\n- Settings are saved automatically.",
+  "author": "Jared C likes",
   "main": "main.js",
   "minAppVersion": "0.12.0"
 }

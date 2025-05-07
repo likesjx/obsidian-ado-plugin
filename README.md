@@ -22,8 +22,30 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
 
 ## Usage
 
-- Access the plugin features from the command palette or ribbon icons.
-- Use the settings tab to configure your Azure DevOps connection and preferences.
+### Enabling and Configuring the Plugin
+
+1. Open Obsidian and go to **Settings → Community plugins → Installed plugins**.
+2. Enable "Obsidian ADO Plugin".
+3. A new section called **Obsidian ADO Plugin** will appear in the settings sidebar.
+4. Configure the following fields:
+   - **ADO Personal Access Token**: Enter your Azure DevOps PAT.
+   - **ADO Organization URL**: Enter your Azure DevOps organization URL (e.g., `https://dev.azure.com/yourorganization`).
+   - **Refresh Interval**: Set how often (in minutes) the plugin should refresh data from Azure DevOps.
+5. Your settings are saved automatically.
+
+### Using the Plugin
+
+- Access plugin features from the command palette (Cmd+P or Ctrl+P) by searching for plugin commands (e.g., "Manage Epics", "Manage Features") if implemented.
+- Use the ribbon icons (dice for epics, star for features) in the left sidebar to trigger plugin actions.
+- Return to the settings tab at any time to update your Azure DevOps credentials or preferences.
+
+### What the Plugin Does
+
+- Lets you manage Azure DevOps epics and features directly from Obsidian.
+- Stores your ADO credentials and preferences securely in your vault.
+- (If you add more commands or UI, they’ll appear in the command palette or as additional settings.)
+
+If you want to add more features or commands, edit the TypeScript source, run `npm run build`, and reload the plugin in Obsidian.
 
 ## Development & Contribution
 

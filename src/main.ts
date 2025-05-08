@@ -242,9 +242,10 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
         { label: 'Assigned To', fieldName: 'System.AssignedTo' },
         { label: 'Created By', fieldName: 'System.CreatedBy' },
         { label: 'Changed By', fieldName: 'System.ChangedBy' },
-        { label: 'Epic Owner', fieldName: 'Custom.EnterpriseOneEpicOwner' }, // REMINDER: Update this placeholder
-        { label: 'Project Manager', fieldName: 'Custom.ProjectManager' }, // REMINDER: Update this placeholder
-        { label: 'Technical Lead', fieldName: 'Custom.TechnicalLead' } // REMINDER: Update this placeholder
+        { label: 'Epic Owner', fieldName: 'Custom.EnterpriseOneEpicOwner' }, // REMINDER: Update if actual field name is different
+        { label: 'Solution Architect', fieldName: 'Custom.SolutionArchitect' },
+        { label: 'CTX Commerce PM', fieldName: 'Custom.CTXCommerceDomainPM' },
+        { label: 'CTX Web Acq. PM', fieldName: 'Custom.CTXWebAcquisitionsPM' }
         // Add more contact roles here with their labels and actual ADO field names
     ];
 

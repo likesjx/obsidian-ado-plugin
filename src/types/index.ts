@@ -19,9 +19,10 @@ export interface Epic {
         "System.AssignedTo"?: AdoIdentity;
         "System.CreatedBy"?: AdoIdentity;
         "System.ChangedBy"?: AdoIdentity;
-        "Custom.EnterpriseOneEpicOwner"?: AdoIdentity; // Placeholder - replace with actual field name
-        "Custom.ProjectManager"?: AdoIdentity; // Placeholder - replace with actual field name
-        "Custom.TechnicalLead"?: AdoIdentity; // Placeholder - replace with actual field name
+        "Custom.EnterpriseOneEpicOwner"?: AdoIdentity; // Placeholder - replace if actual field name is different
+        "Custom.SolutionArchitect"?: AdoIdentity;
+        "Custom.CTXCommerceDomainPM"?: AdoIdentity;
+        "Custom.CTXWebAcquisitionsPM"?: AdoIdentity;
         // Add other custom contact fields here as AdoIdentity or appropriate type
         [key: string]: any; // Allow other fields
     };

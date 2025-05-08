@@ -7,6 +7,15 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
 - **Manage Epics**: Create, update, and delete epics in Azure DevOps.
 - **Manage Features**: Create, update, and delete features associated with epics.
 - **User Settings**: Customize plugin settings through a dedicated settings tab.
+- **Epic Anchors & Details Popover**:
+   - Insert epic anchors (e.g., `<<#12345>>`) into your notes using a command.
+   - In Reading and Live Preview modes, these anchors render as clickable buttons.
+   - Clicking an epic button fetches its details from Azure DevOps and displays them in a popover.
+   - The popover features a tabbed interface:
+       - **Description Tab**: Shows the Epic's `System.Description`.
+       - **Contacts Tab**: Displays key personnel like Assigned To, Created By, Changed By, and other configurable custom contact roles (e.g., Epic Owner, Solution Architect).
+       - **Readiness Tab**: A configurable tab for displaying readiness information related to the Epic.
+   - Includes an "Open in ADO" button to directly navigate to the work item in Azure DevOps.
 
 ## Installation
 
@@ -30,6 +39,7 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
 4. Configure the following fields:
    - **ADO Personal Access Token**: Enter your Azure DevOps PAT.
    - **ADO Organization URL**: Enter your Azure DevOps organization URL (e.g., `https://dev.azure.com/yourorganization`).
+   - **ADO Project Name**: Enter the name of your Azure DevOps project (this is now required for the "Open in ADO" link in the epic popover).
    - **Refresh Interval**: Set how often (in minutes) the plugin should refresh data from Azure DevOps.
 5. Your settings are saved automatically.
 

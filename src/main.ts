@@ -226,43 +226,128 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
     popover.style.borderRadius = '5px';
     popover.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
     popover.style.zIndex = '1000'; // Ensure it's on top
-    popover.style.maxWidth = '400px';
+    popover.style.maxWidth = '500px'; // Adjusted for tabs
+    popover.style.minWidth = '350px';
     popover.style.overflowY = 'auto';
-    popover.style.maxHeight = '300px';
+    popover.style.maxHeight = '450px'; // Adjusted for tabs
 
     const fields = epic.fields;
     const title = fields['System.Title'] || 'N/A';
     const state = fields['System.State'] || 'N/A';
-    // ADO description can be HTML. For simplicity, we'll display it as is.
-    // For a more robust solution, sanitize or render HTML carefully.
-    const description = fields['System.Description'] || 'N/A';
-    const createdDate = fields['System.CreatedDate'] ? new Date(fields['System.CreatedDate']).toLocaleDateString() : 'N/A';
-    const updatedDate = fields['System.ChangedDate'] ? new Date(fields['System.ChangedDate']).toLocaleDateString() : 'N/A';
-
-
-    let contentHtml = `<h4>Epic #${epic.id}: ${title}</h4>`;
-    contentHtml += '<table>';
-    contentHtml += `<tr><td><strong>State:</strong></td><td>${state}</td></tr>`;
-    contentHtml += `<tr><td style="vertical-align: top;"><strong>Description:</strong></td><td>${description}</td></tr>`; // Displaying raw, could be HTML
-    contentHtml += `<tr><td><strong>Created:</strong></td><td>${createdDate}</td></tr>`;
-    contentHtml += `<tr><td><strong>Updated:</strong></td><td>${updatedDate}</td></tr>`;
-    contentHtml += '</table>';
+    const descriptionContent = fields['System.Description'] || 'No description available.';
     
+    // Placeholder: Replace 'Custom.ContactsFieldName' and 'Custom.ReadinessFieldName'
+    // with the actual ADO field names for these tabs from your ADO process template.
+    const contactsContent = fields['Custom.ContactsFieldName'] || 'Contacts information not available. Configure field name.';
+    const readinessContent = fields['Custom.ReadinessFieldName'] || 'Readiness information not available. Configure field name.';
+
+    // Header
+    const header = document.createElement('h4');
+    header.style.marginTop = '0px';
+    header.style.marginBottom = '10px';
+    header.textContent = `Epic #${epic.id}: ${title}`;
+    popover.appendChild(header);
+
+    // Tab container
+    const tabContainer = document.createElement('div');
+    tabContainer.style.display = 'flex';
+    tabContainer.style.marginBottom = '10px';
+    tabContainer.style.borderBottom = '1px solid var(--background-modifier-border)';
+
+    // Tab content container
+    const tabContentContainer = document.createElement('div');
+    tabContentContainer.style.minHeight = '100px'; // Give some base height for content
+
+    const tabs = [
+        { id: 'description', name: 'Description', content: descriptionContent },
+        { id: 'contacts', name: 'Contacts', content: contactsContent },
+        { id: 'readiness', name: 'Readiness', content: readinessContent }
+    ];
+
+    tabs.forEach((tabInfo, index) => {
+        const tabButton = document.createElement('button');
+        tabButton.textContent = tabInfo.name;
+        tabButton.style.padding = '8px 12px';
+        tabButton.style.border = 'none';
+        tabButton.style.background = 'transparent';
+        tabButton.style.cursor = 'pointer';
+        tabButton.style.borderBottom = '2px solid transparent';
+        tabButton.style.marginRight = '5px';
+        tabButton.dataset.tabId = tabInfo.id;
+
+        const tabPane = document.createElement('div');
+        tabPane.id = `tab-pane-${tabInfo.id}`;
+        tabPane.classList.add('epic-popover-tab-pane');
+        tabPane.style.padding = '5px';
+        
+        // ADO Description is often HTML. Set innerHTML for it.
+        // For other custom fields, they might be plain text or also HTML.
+        // Using innerHTML for all for now, but sanitize if content is untrusted.
+        tabPane.innerHTML = tabInfo.content;
+
+        if (index !== 0) {
+            tabPane.style.display = 'none';
+        } else {
+            tabButton.style.borderBottomColor = 'var(--interactive-accent)';
+            tabButton.style.fontWeight = 'bold';
+        }
+
+        tabButton.onclick = () => {
+            tabContainer.querySelectorAll('button').forEach(btn => {
+                btn.style.borderBottomColor = 'transparent';
+                btn.style.fontWeight = 'normal';
+            });
+            popover.querySelectorAll('.epic-popover-tab-pane').forEach(pane => {
+                (pane as HTMLElement).style.display = 'none';
+            });
+
+            tabButton.style.borderBottomColor = 'var(--interactive-accent)';
+            tabButton.style.fontWeight = 'bold';
+            const activePane = popover.querySelector(`#tab-pane-${tabInfo.id}`) as HTMLElement;
+            if (activePane) {
+                activePane.style.display = 'block';
+            }
+        };
+
+        tabContainer.appendChild(tabButton);
+        tabContentContainer.appendChild(tabPane);
+    });
+
+    popover.appendChild(tabContainer);
+    popover.appendChild(tabContentContainer);
+    
+    const generalInfoContainer = document.createElement('div');
+    generalInfoContainer.style.marginTop = '10px';
+    generalInfoContainer.style.paddingTop = '10px';
+    generalInfoContainer.style.borderTop = '1px solid var(--background-modifier-border)';
+    generalInfoContainer.style.fontSize = '0.9em';
+    
+    let generalInfoHtml = `<strong>State:</strong> ${state}<br>`;
+    generalInfoHtml += `<strong>Created:</strong> ${fields['System.CreatedDate'] ? new Date(fields['System.CreatedDate']).toLocaleDateString() : 'N/A'}<br>`;
+    generalInfoHtml += `<strong>Updated:</strong> ${fields['System.ChangedDate'] ? new Date(fields['System.ChangedDate']).toLocaleDateString() : 'N/A'}`;
+    generalInfoContainer.innerHTML = generalInfoHtml;
+    popover.appendChild(generalInfoContainer);
+
     const openInAdoButton = document.createElement('button');
     openInAdoButton.textContent = 'Open in ADO';
-    openInAdoButton.style.marginTop = '10px';
+    openInAdoButton.style.marginTop = '15px';
+    openInAdoButton.style.padding = '5px 10px';
     openInAdoButton.onclick = () => {
         const orgUrl = plugin.settings?.organizationUrl;
+        const projectName = plugin.settings?.projectName;
         if (!orgUrl) {
             new Notice('Azure DevOps Organization URL is not set.');
             return;
         }
+        if (!projectName) {
+            new Notice('Azure DevOps Project Name is not set.');
+            return;
+        }
         const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
-        window.open(`${normalizedOrgUrl}/_workitems/edit/${epic.id}`, '_blank');
+        // Construct the full URL including organization and project
+        window.open(`${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${epic.id}`, '_blank');
         closeCurrentEpicPopover();
     };
-
-    popover.innerHTML = contentHtml;
     popover.appendChild(openInAdoButton);
 
     document.body.appendChild(popover);

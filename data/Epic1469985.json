@@ -1,0 +1,187 @@
+{
+    "id": 1469985,
+    "rev": 51,
+    "fields": {
+        "System.AreaPath": "Consumer Technology eXperience (Prod)\\CTX Portfolio",
+        "System.TeamProject": "Consumer Technology eXperience (Prod)",
+        "System.IterationPath": "Consumer Technology eXperience (Prod)",
+        "System.WorkItemType": "Epic",
+        "System.State": "Funnel",
+        "System.Reason": "Moved to state Funnel",
+        "System.AssignedTo": {
+            "displayName": "HILL, JUMAANE",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/b45f7133-093a-6424-9f95-740c371ec039",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5"
+                }
+            },
+            "id": "b45f7133-093a-6424-9f95-740c371ec039",
+            "uniqueName": "jh2632@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5",
+            "descriptor": "aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5"
+        },
+        "System.CreatedDate": "2025-03-05T18:47:06.527Z",
+        "System.CreatedBy": {
+            "displayName": "MALOY, ANDREA",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/0ff45ab3-fce6-6da6-81e2-485268747ce7",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.MGZmNDVhYjMtZmNlNi03ZGE2LTgxZTItNDg1MjY4NzQ3Y2U3"
+                }
+            },
+            "id": "0ff45ab3-fce6-6da6-81e2-485268747ce7",
+            "uniqueName": "am858g@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.MGZmNDVhYjMtZmNlNi03ZGE2LTgxZTItNDg1MjY4NzQ3Y2U3",
+            "descriptor": "aad.MGZmNDVhYjMtZmNlNi03ZGE2LTgxZTItNDg1MjY4NzQ3Y2U3"
+        },
+        "System.ChangedDate": "2025-04-24T00:21:47.793Z",
+        "System.ChangedBy": {
+            "displayName": "Dart Smith",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/f9365765-5754-66a9-9630-b4028da75816",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.ZjkzNjU3NjUtNTc1NC03NmE5LTk2MzAtYjQwMjhkYTc1ODE2"
+                }
+            },
+            "id": "f9365765-5754-66a9-9630-b4028da75816",
+            "uniqueName": "ws687v@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.ZjkzNjU3NjUtNTc1NC03NmE5LTk2MzAtYjQwMjhkYTc1ODE2",
+            "descriptor": "aad.ZjkzNjU3NjUtNTc1NC03NmE5LTk2MzAtYjQwMjhkYTc1ODE2"
+        },
+        "System.CommentCount": 6,
+        "System.Title": "Low Cost WiFi 7 Fiber Gateway",
+        "System.BoardColumn": "Funnel",
+        "System.BoardColumnDone": false,
+        "Microsoft.VSTS.Common.StateChangeDate": "2025-03-05T18:47:06.527Z",
+        "Microsoft.VSTS.Common.Priority": 1,
+        "Microsoft.VSTS.Common.ValueArea": "Business",
+        "Custom.EnterpriseOneEpicOwner": {
+            "displayName": "HILL, JUMAANE",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/b45f7133-093a-6424-9f95-740c371ec039",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5"
+                }
+            },
+            "id": "b45f7133-093a-6424-9f95-740c371ec039",
+            "uniqueName": "jh2632@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5",
+            "descriptor": "aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5"
+        },
+        "Custom.EnterpriseOneEpicID": "1011260",
+        "Custom.SolutionTrainEngineer": {
+            "displayName": "HILL, JUMAANE",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/b45f7133-093a-6424-9f95-740c371ec039",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5"
+                }
+            },
+            "id": "b45f7133-093a-6424-9f95-740c371ec039",
+            "uniqueName": "jh2632@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5",
+            "descriptor": "aad.YjQ1ZjcxMzMtMDkzYS03NDI0LTlmOTUtNzQwYzM3MWVjMDM5"
+        },
+        "Custom.SolutionArchitect": {
+            "displayName": "RODRIGUEZ, JUAN F",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/4710be50-a048-6c8d-b57a-0e877320f23f",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.NDcxMGJlNTAtYTA0OC03YzhkLWI1N2EtMGU4NzczMjBmMjNm"
+                }
+            },
+            "id": "4710be50-a048-6c8d-b57a-0e877320f23f",
+            "uniqueName": "jr2888@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.NDcxMGJlNTAtYTA0OC03YzhkLWI1N2EtMGU4NzczMjBmMjNm",
+            "descriptor": "aad.NDcxMGJlNTAtYTA0OC03YzhkLWI1N2EtMGU4NzczMjBmMjNm"
+        },
+        "Custom.WSJF": 0.0,
+        "Custom.TShirtSize": "None",
+        "Custom.QuickbaseID": "7372",
+        "WEF_AF8A2838F28F49B0B9C1C3DEE5FCFE5C_Kanban.Column": "Funnel",
+        "WEF_AF8A2838F28F49B0B9C1C3DEE5FCFE5C_Kanban.Column.Done": false,
+        "Custom.RequestingBusinessUnit": "Mass Markets and Distribution",
+        "Custom.CTXEpicCategory": "Client Sponsored",
+        "Custom.SignificantOpenQuestions": false,
+        "Custom.CTXProgramIncrement": "PI 24",
+        "Custom.CommittoWork": "PI 24",
+        "Custom.BusinessPartner": "Donny Kringen",
+        "Custom.KeyStakeholders": "jeanne",
+        "Custom.ActivePIRank": 200,
+        "WEF_D72B03D1C35E43D595019A79C41083F8_Kanban.Column": "Funnel",
+        "WEF_D72B03D1C35E43D595019A79C41083F8_Kanban.Column.Done": false,
+        "Custom.BRStatus": "Not Started",
+        "Custom.SubmittedtoCapPlanning": false,
+        "Custom.UFDQuickbaseID": "3741",
+        "Custom.CTXCommerceDomainPM": {
+            "displayName": "SHAIK, ABDUL SHAJAHAN BASHA",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/1ead52df-7672-6e71-b879-359a3fe0399e",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.MWVhZDUyZGYtNzY3Mi03ZTcxLWI4NzktMzU5YTNmZTAzOTll"
+                }
+            },
+            "id": "1ead52df-7672-6e71-b879-359a3fe0399e",
+            "uniqueName": "as275q@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.MWVhZDUyZGYtNzY3Mi03ZTcxLWI4NzktMzU5YTNmZTAzOTll",
+            "descriptor": "aad.MWVhZDUyZGYtNzY3Mi03ZTcxLWI4NzktMzU5YTNmZTAzOTll"
+        },
+        "Custom.CTXWebAcquisitionsPM": {
+            "displayName": "ATMAKUR, SRI LAKSHMI",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/ea9c2a4f-78e5-6020-9e5f-074e54e0fb30",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.ZWE5YzJhNGYtNzhlNS03MDIwLTllNWYtMDc0ZTU0ZTBmYjMw"
+                }
+            },
+            "id": "ea9c2a4f-78e5-6020-9e5f-074e54e0fb30",
+            "uniqueName": "sa324e@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.ZWE5YzJhNGYtNzhlNS03MDIwLTllNWYtMDc0ZTU0ZTBmYjMw",
+            "descriptor": "aad.ZWE5YzJhNGYtNzhlNS03MDIwLTllNWYtMDc0ZTU0ZTBmYjMw"
+        },
+        "Custom.CTXCommercePIStoryPts": 48,
+        "Custom.CTXWebAcquisitionsPIStoryPts": 24,
+        "System.Description": "<div>-<div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><span style=\"box-sizing:border-box;\">Link to PSD:&nbsp;<a href=\"https://att.pvcloud.com/planview/ContentManagement/contentdetail.aspx?code=201601&amp;sc=SEQ-199112&amp;rc=&amp;back=closereload\" target=_blank rel=\"noopener noreferrer\" style=\"box-sizing:border-box;\">https://att.pvcloud.com/planview/ContentManagement/contentdetail.aspx?code=201601&amp;sc=SEQ-199112&amp;rc=&amp;back=closereload</a></span> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><br style=\"box-sizing:border-box;\"> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\">Link to Slides:&nbsp;<a href=\"https://att.pvcloud.com/planview/ContentManagement/contentdetail.aspx?code=201599&amp;sc=SEQ-199112&amp;rc=&amp;back=closereload\" target=_blank rel=\"noopener noreferrer\" style=\"box-sizing:border-box;\">https://att.pvcloud.com/planview/ContentManagement/contentdetail.aspx?code=201599&amp;sc=SEQ-199112&amp;rc=&amp;back=closereload</a> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><span style=\"box-sizing:border-box;\"><br style=\"box-sizing:border-box;\"></span> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><span style=\"box-sizing:border-box;\">What is the customer trying to accomplish?<br style=\"box-sizing:border-box;\"></span> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><div style=\"box-sizing:border-box;\">Projections assume customers will expect wifi7 by ~2027, our current wifi7 device is over $100 more expensive per unit than the RFP for low cost wifi 7 - our capital plan will not allow for the increase in capital needed for the BGW620 to go mainstream.<br style=\"box-sizing:border-box;\"> </div><div style=\"box-sizing:border-box;\"><br style=\"box-sizing:border-box;\"> </div><span style=\"box-sizing:border-box;\">Additionally, these RFP responses represent a $40 per unit savings over our current mainstream BGW320.</span><br style=\"box-sizing:border-box;\"> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><span style=\"box-sizing:border-box;\"><br style=\"box-sizing:border-box;\"></span> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><span style=\"box-sizing:border-box;\"><span style=\"box-sizing:border-box;\"><br style=\"box-sizing:border-box;\"></span><div style=\"box-sizing:border-box;\">How is this different than what they do today?<br style=\"box-sizing:border-box;\"> </div><div style=\"box-sizing:border-box;\">New gateways will provide cost savings and entry level wifi7 to customers.<br style=\"box-sizing:border-box;\"> </div><div style=\"box-sizing:border-box;\"><br style=\"box-sizing:border-box;\"> </div><span style=\"box-sizing:border-box;\">Projected savings over current plan is over $200M in savings per year from 2027-2030 with ~$24M in savings in 2026.</span><br style=\"box-sizing:border-box;\"></span> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><span style=\"box-sizing:border-box;\"><span style=\"box-sizing:border-box;\"><br style=\"box-sizing:border-box;\"></span></span> </div><div style=\"box-sizing:border-box;background-color:rgb(234, 234, 234);\"><span style=\"box-sizing:border-box;\"><span style=\"box-sizing:border-box;\"><span style=\"box-sizing:border-box;\">Epic Dependencies<br style=\"box-sizing:border-box;\"></span><span style=\"box-sizing:border-box;\">Device onboarding/certification; capability to be supported in our legacy stack; PRPL software development; USP Protocol development; Tech dev system development; OEM device availability, Max Linear chipset development</span></span></span> </div> </div>",
+        "Custom.LinktoSolutionIntent": "<div><a href=\"https://att.sharepoint.com/:b:/r/sites/ASPA/ASIR/Shared%20Documents/Consumer%202022-2025/Phase%201%20%28Requests%29/1011260%20QB%207372%20LCW7%20-%20Low%20Cost%20WiFi%207%20Gateway%20.pdf?e=4:2ea43c6146ee45dd82eee6090d44249f&amp;web=1&amp;sharingv2=true&amp;fromShare=true&amp;at=9\">https://att.sharepoint.com/:b:/r/sites/ASPA/ASIR/Shared%20Documents/Consumer%202022-2025/Phase%201%20(Requests)/1011260%20QB%207372%20LCW7%20-%20Low%20Cost%20WiFi%207%20Gateway%20.pdf?e=4%3a2ea43c6146ee45dd82eee6090d44249f&amp;web=1&amp;sharingv2=true&amp;fromShare=true&amp;at=9</a><br> </div>",
+        "Custom.BusinessOutcomesorSuccessCriteria": "<div><div><span style=\"\">What are the targeted metrics/outcomes you are trying to obtain?</span> </div><div>46M cost to develop/certify in 2025, 24M savings 2026, 172M savings 2027 - these are assuming a non-aggressive launch timeline. additional savings available with more aggressive timelines and device cost savings.<br> </div><div><br> </div><span>Note: 2028-2030 savings are ~220M per year.</span><br> </div><div><span><br></span> </div><div><span><span>Quantifiable Benefit Estimate<br></span><span>-$ 11,600,000.00</span><br></span> </div><div><span><span><br></span></span> </div><div>Cost reduction exercise due to lower device cost than current unit. Represents over $100 in savings compared to BGW620, and ~$40 savings over BGW320. We buy ~2.5Million gateways per year most years through 2030. The significant and immediate (&lt;6 months) impact to the direct operating result represents ~$10M per month cost savings upon GA.<br> </div><div><br> </div><div><span><span>What does success look like?<br></span><div>Launch ready by 4Q2025<br> </div><span>Price target under $150 per unit</span><br></span> </div><div><span><span><br></span></span> </div>",
+        "Custom.CTXProductTeams": "ACC-Shop and Purchase;Commerce Services;Retail Suite Apps;SPT-Auth Reg and Profile;SPT-Catalog Publish Platform;SPT-CMS Platform;SPT-Customer Graph 360;SPT-Nimbus;SPT-Ops Tier 2 and SRE;SPT-Order Mgmt;SPT-SFDC Service and Support;SPT-SHM;Web-Learn and Solve;Web-Post Purchase;Web-Acquisitions",
+        "Custom.NonfunctionalRequirements": "<span>Marketing materials supporting the new low cost gateway required<br></span><span></span>",
+        "Custom.InScope": "<div>Device certification to be completed by LCL, NEL, DVL, PVT and FFA - testing to support device compatibility interoperability (Customer Order Flow) 4971 (for swaps) and 4991 Extender (new customers), SFPs (XGSPON/ ALT Optics/GPON), ONT and OLT. Device certification must be validated with the latest FW and any changes to the current prpl effort. Ensure certification includes Airties, ECO, CapGemini updates. This device will communicate with USP protocol\nNetwork Engineering NDR, Gold Standards and engineering guidelines documentation to support Low-Cost WiFi 7 Gateway \nOAP (Open access partner) and Gigapower  \nSupply Chain management and onboarding to add and configure device SKU, collateral and any accessories - to support the following subdomains (MDM, Planning, Procurement, Warehouse, Ordering, Shipments, Billing, Accounting, Asset Tracking and Return) \nSales and Ordering support to be like how we managed BGW320 today. Sales Channels (Online, SHM, Retail, and Customer Agent sales channel via CRM). \nDevice install via CSI and FTI and correct device identification during the CSI and FTI process flow \nActivation and Provisioning - support must include ordering changes - Disconnect, Swap, BAN changes, and other pertinent order changes that is currently supported for the BGW320 gateway today\nEnhance or revise Customer Care and AFO M&amp;P process documents, including updates to support diagnostic and troubleshooting for the new LCW7 device. Systematic rules required to confirm customers repair swap follows like for like for gateway. Machine learning logic to be made available to check the health for the new low-cost gateway\nReporting - similar reports that were developed for BGW320 and BGW620 to be made available for the Low-Cost WiFi Gateway to confirm result CSI success/ tech activation/customer care call reporting likely desired<br> </div>",
+        "Custom.OutofScope": "<div><span>1. VOIP and IPTV is not supported in the new LCW7 device<br></span><div>2. AFC Standard power <br> </div><div>3. BSSe framework - support and handled by BSSe migration team/project<br> </div><span>4. No new bundle features</span><br> </div>",
+        "Custom.MVPFeatures": "<div><span>Device certification to be completed by LCL, NEL, DVL, PVT and FFA - testing to support device compatibility interoperability (Customer Order Flow) 4971 (for swaps) and 4991 Extender (new customers), SFPs (XGSPON/ ALT Optics/GPON), ONT and OLT. Device certification must be validated with the latest FW and any changes to the current prpl effort. Ensure certification includes Airties, ECO, CapGemini updates. This device will communicate with USP protocol<br></span><div>Network Engineering NDR, Gold Standards and engineering guidelines documentation to support Low-Cost WiFi 7 Gateway <br> </div><div>OAP (Open access partner) and Gigapower &nbsp;<br> </div><div>Supply Chain management and onboarding to add and configure device SKU, collateral and any accessories - to support the following subdomains (MDM, Planning, Procurement, Warehouse, Ordering, Shipments, Billing, Accounting, Asset Tracking and Return) <br> </div><div>Sales and Ordering support to be like how we managed BGW320 today. Sales Channels (Online, SHM, Retail, and Customer Agent sales channel via CRM). <br> </div><div>Device install via CSI and FTI and correct device identification during the CSI and FTI process flow <br> </div><div>Activation and Provisioning - support must include ordering changes - Disconnect, Swap, BAN changes, and other pertinent order changes that is currently supported for the BGW320 gateway today<br> </div><div>Enhance or revise Customer Care and AFO M&amp;P process documents, including updates to support diagnostic and troubleshooting for the new LCW7 device. Systematic rules required to confirm customers repair swap follows like for like for gateway. Machine learning logic to be made available to check the health for the new low-cost gateway<br> </div><span>Reporting - similar reports that were developed for BGW320 and BGW620 to be made available for the Low-Cost WiFi Gateway to confirm result CSI success/ tech activation/customer care call reporting likely desired</span><br> </div>",
+        "Custom.ImpactonSolutionsProgramsServices": "<div>Ordering, provisioning, customer care, supply chain and network impact. Update videos, and any marketing materials<br> </div>",
+        "Custom.ImpactonSalesDistDeploymentSupport": "<div><span>Customer care and diagnostic troubleshooting materials. Update videos, and any marketing materials<br></span><span></span><br> </div>",
+        "Custom.AnalysisSummary": "",
+        "Custom.LeadingIndicator": "<div>WLN </div>",
+        "Custom.EpicHypothesisStatement": "<div>To launch a new low cost WiFi7 gateway with a new chipset without the IPTV and VOIP capability. This gateway will provide cost savings against the current BGW320 and BGW620. &nbsp; Functionality to mirror how we support BGW320 today from a fulfillment, installation, activation and provisioning via CSI and FTI. This project will be in partnership with the pending OEM (TBD). Introduction of a New PON chipsets and SOC.<br> </div>",
+        "Custom.Applications": "DAASOL:31200;Nimbus:31997",
+        "Custom.CTXCommerceDomainNotes": "<div><span style=\"color:rgb(36, 36, 36);font-family:&quot;Aptos Narrow&quot;, Calibri, &quot;sans-serif&quot;, &quot;Mongolian Baiti&quot;, &quot;Microsoft Yi Baiti&quot;, &quot;Javanese Text&quot;, &quot;Yu Gothic&quot;;font-size:14.6667px;text-align:left;display:inline !important;\">BR review in progress, SI/TDD pending. DOR not met.&nbsp;</span><br> </div><div> </div>",
+        "Custom.CTXWebAcquisitionsNotes": "Acquisition Aces --------------------------------------------------",
+        "System.Tags": "CG_PI24_TSO; CG_PM_ROHIT; PI_Planning; PI24_Pavan; PI24_Planning; RTB1"
+    },
+    "_links": {
+        "self": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1469985"
+        },
+        "workItemUpdates": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1469985/updates"
+        },
+        "workItemRevisions": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1469985/revisions"
+        },
+        "workItemComments": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1469985/comments"
+        },
+        "html": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_workitems/edit/1469985"
+        },
+        "workItemType": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItemTypes/Epic"
+        },
+        "fields": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/fields"
+        }
+    },
+    "url": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1469985"
+}

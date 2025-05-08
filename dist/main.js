@@ -10889,6 +10889,8 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian2 = require("obsidian");
+var import_view = require("@codemirror/view");
+var import_state = require("@codemirror/state");
 
 // node_modules/axios/lib/helpers/bind.js
 function bind(fn, thisArg) {
@@ -14232,44 +14234,82 @@ var ADOApi = class {
 
 // src/ado/epics.ts
 var EpicsManager = class {
-  constructor(adoApi) {
+  constructor(adoApi, settings) {
     this.adoApi = adoApi;
+    this.settings = settings;
+    this.apiVersion = "7.0";
   }
+  getProjectName() {
+    if (!this.settings.projectName) {
+      throw new Error("Azure DevOps Project Name is not configured in plugin settings.");
+    }
+    return encodeURIComponent(this.settings.projectName);
+  }
+  // TODO: Verify and update this endpoint for creating epics
   async createEpic(epicData) {
-    const response = await this.adoApi.post("/epics", epicData);
+    const projectName = this.getProjectName();
+    const response = await this.adoApi.post(`/${projectName}/_apis/wit/workitems/$Epic?api-version=${this.apiVersion}`, epicData);
     return response.data;
   }
+  // TODO: Verify and update this endpoint for updating epics
   async updateEpic(epicId, epicData) {
-    const response = await this.adoApi.patch(`/epics/${epicId}`, epicData);
+    const projectName = this.getProjectName();
+    const response = await this.adoApi.patch(`/${projectName}/_apis/wit/workitems/${epicId}?api-version=${this.apiVersion}`, epicData);
     return response.data;
   }
+  // TODO: Verify and update this endpoint for deleting epics
   async deleteEpic(epicId) {
-    await this.adoApi.delete(`/epics/${epicId}`);
+    const projectName = this.getProjectName();
+    await this.adoApi.delete(`/${projectName}/_apis/wit/workitems/${epicId}?api-version=${this.apiVersion}`);
   }
+  // TODO: Verify and update this endpoint for fetching multiple epics (likely using WIQL)
   async fetchEpics() {
-    const response = await this.adoApi.get("/epics");
+    const projectName = this.getProjectName();
+    const response = await this.adoApi.get(`/${projectName}/_apis/wit/workitems?type=Epic&api-version=${this.apiVersion}`);
+    return response.data;
+  }
+  async fetchEpicById(epicId) {
+    const projectName = this.getProjectName();
+    const response = await this.adoApi.get(`/${projectName}/_apis/wit/workitems/${epicId}?api-version=${this.apiVersion}`);
     return response.data;
   }
 };
 
 // src/ado/features.ts
 var FeaturesManager = class {
-  constructor(adoApi) {
+  constructor(adoApi, settings) {
     this.adoApi = adoApi;
+    this.settings = settings;
+    this.apiVersion = "7.0";
   }
+  getProjectName() {
+    if (!this.settings.projectName) {
+      throw new Error("Azure DevOps Project Name is not configured in plugin settings.");
+    }
+    return encodeURIComponent(this.settings.projectName);
+  }
+  // TODO: Verify and update this endpoint for creating features
   async createFeature(featureData) {
-    const response = await this.adoApi.post("/features", featureData);
+    const projectName = this.getProjectName();
+    const response = await this.adoApi.post(`/${projectName}/_apis/wit/workitems/$Feature?api-version=${this.apiVersion}`, featureData);
     return response.data;
   }
+  // TODO: Verify and update this endpoint for updating features
   async updateFeature(featureId, featureData) {
-    const response = await this.adoApi.patch(`/features/${featureId}`, featureData);
+    const projectName = this.getProjectName();
+    const response = await this.adoApi.patch(`/${projectName}/_apis/wit/workitems/${featureId}?api-version=${this.apiVersion}`, featureData);
     return response.data;
   }
+  // TODO: Verify and update this endpoint for deleting features
   async deleteFeature(featureId) {
-    await this.adoApi.delete(`/features/${featureId}`);
+    const projectName = this.getProjectName();
+    await this.adoApi.delete(`/${projectName}/_apis/wit/workitems/${featureId}?api-version=${this.apiVersion}`);
   }
+  // TODO: Verify and update this endpoint for fetching features related to an epic (likely using WIQL)
   async fetchFeatures(epicId) {
-    const response = await this.adoApi.get(`/epics/${epicId}/features`);
+    const projectName = this.getProjectName();
+    console.warn(`fetchFeatures for epicId ${epicId} is using a placeholder implementation and needs a proper WIQL query.`);
+    const response = await this.adoApi.get(`/${projectName}/_apis/wit/workitems?type=Feature&api-version=${this.apiVersion}`);
     return response.data;
   }
 };
@@ -14287,10 +14327,16 @@ var SettingsTab = class extends import_obsidian.PluginSettingTab {
     const settings = this.plugin.settings || {};
     const pat = settings.pat || "";
     const organizationUrl = settings.organizationUrl || "";
+    const projectName = settings.projectName || "";
     const refreshInterval = settings.refreshInterval !== void 0 && settings.refreshInterval !== null ? settings.refreshInterval : 15;
     new import_obsidian.Setting(this.containerEl).setName("ADO Personal Access Token").setDesc("Enter your Azure DevOps Personal Access Token.").addText((text) => text.setPlaceholder("Enter your PAT").setValue(pat).onChange(async (value) => {
       if (!this.plugin.settings) this.plugin.settings = {};
       this.plugin.settings.pat = value;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(this.containerEl).setName("ADO Project Name").setDesc("Enter your Azure DevOps Project Name.").addText((text) => text.setPlaceholder("Enter your Project Name").setValue(projectName).onChange(async (value) => {
+      if (!this.plugin.settings) this.plugin.settings = {};
+      this.plugin.settings.projectName = value;
       await this.plugin.saveSettings();
     }));
     new import_obsidian.Setting(this.containerEl).setName("ADO Organization URL").setDesc("Enter your Azure DevOps Organization URL.").addText((text) => text.setPlaceholder("https://dev.azure.com/yourorganization").setValue(organizationUrl).onChange(async (value) => {
@@ -14314,8 +14360,8 @@ var ADOPlugin = class extends import_obsidian2.Plugin {
   async onload() {
     await this.loadSettings();
     this.adoApi = new ADOApi();
-    this.epicsManager = new EpicsManager(this.adoApi);
-    this.featuresManager = new FeaturesManager(this.adoApi);
+    this.epicsManager = new EpicsManager(this.adoApi, this.settings);
+    this.featuresManager = new FeaturesManager(this.adoApi, this.settings);
     this.addRibbonIcon("dice", "Manage Epics", async () => {
     });
     this.addRibbonIcon("star", "Manage Features", async () => {
@@ -14328,6 +14374,77 @@ var ADOPlugin = class extends import_obsidian2.Plugin {
         insertEpicAnchor(this.app, editor);
       }
     });
+    console.log("Registering Epic Anchor Post Processor");
+    this.registerMarkdownPostProcessor((element, context) => {
+      console.log("Epic Anchor Post Processor - Processing element:", element);
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      let node;
+      const nodesToReplace = [];
+      while (node = walker.nextNode()) {
+        if (node.nodeValue) {
+          const regex = /<<#(\d+)>>/g;
+          let match;
+          while ((match = regex.exec(node.nodeValue)) !== null) {
+            console.log(`Epic Anchor Post Processor - Found anchor: ${match[0]} with ID: ${match[1]} in node:`, node);
+            nodesToReplace.push({ node, epicId: match[1], fullMatch: match[0] });
+          }
+        }
+      }
+      for (const item of nodesToReplace) {
+        const { node: node2, epicId, fullMatch } = item;
+        if (!node2.parentElement) continue;
+        const button = document.createElement("button");
+        button.classList.add("epic-anchor-button");
+        button.textContent = `Epic #${epicId}`;
+        button.onclick = async () => {
+          console.log(`Epic Anchor Post Processor - Button for Epic #${epicId} clicked.`);
+          const originalButtonText = button.textContent;
+          button.textContent = "Loading...";
+          button.disabled = true;
+          try {
+            if (!this.settings?.organizationUrl) {
+              new import_obsidian2.Notice("Azure DevOps Organization URL is not set in plugin settings.");
+              button.textContent = originalButtonText;
+              button.disabled = false;
+              return;
+            }
+            if (!this.settings?.pat) {
+              new import_obsidian2.Notice("Azure DevOps PAT is not set in plugin settings.");
+              button.textContent = originalButtonText;
+              button.disabled = false;
+              return;
+            }
+            this.adoApi.setBaseUrl(this.settings.organizationUrl);
+            this.adoApi.setPersonalAccessToken(this.settings.pat);
+            const epicDetails = await this.epicsManager.fetchEpicById(epicId);
+            console.log(`Epic Anchor Post Processor - Fetched epic details for #${epicId}:`, epicDetails);
+            createAndShowEpicPopover(button, epicDetails, this);
+          } catch (error) {
+            console.error(`Epic Anchor Post Processor - Error fetching epic #${epicId}:`, error);
+            new import_obsidian2.Notice(`Failed to fetch Epic #${epicId}. See console for details.`);
+          } finally {
+            button.textContent = originalButtonText;
+            button.disabled = false;
+          }
+        };
+        if (node2.nodeValue === fullMatch) {
+          console.log(`Epic Anchor Post Processor - Replacing entire node with button for Epic #${epicId}`);
+          node2.parentElement.replaceChild(button, node2);
+        } else {
+          const parts = node2.nodeValue.split(fullMatch);
+          const parent = node2.parentElement;
+          console.log(`Epic Anchor Post Processor - Splitting node and inserting button for Epic #${epicId}`);
+          parent.insertBefore(document.createTextNode(parts[0]), node2);
+          parent.insertBefore(button, node2);
+          if (parts.length > 1 && parts[1].length > 0) {
+            parent.insertBefore(document.createTextNode(parts[1]), node2);
+          }
+          parent.removeChild(node2);
+        }
+      }
+    });
+    console.log("Registering Epic Anchor Editor Extension");
+    this.registerEditorExtension(epicAnchorViewPlugin(this));
   }
   async loadSettings() {
     this.settings = Object.assign({}, await this.loadData());
@@ -14376,65 +14493,267 @@ function insertEpicAnchor(app, editor) {
     editor.replaceSelection(`<<#${epicNumber}>>`);
   }).open();
 }
-function epicAnchorPostProcessor(el, ctx) {
-  const anchorRegex = /<<#(\d+?)>>/g;
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
-  const nodes = [];
-  let node;
-  while (node = walker.nextNode()) {
-    if (anchorRegex.test(node.textContent || "")) {
-      nodes.push(node);
-    }
+var currentEpicPopover = null;
+var popoverDocumentClickHandler = null;
+function closeCurrentEpicPopover() {
+  if (currentEpicPopover) {
+    currentEpicPopover.remove();
+    currentEpicPopover = null;
   }
-  nodes.forEach((textNode) => {
-    const frag = document.createDocumentFragment();
-    let lastIndex = 0;
-    const text = textNode.textContent || "";
-    anchorRegex.lastIndex = 0;
-    let match;
-    while ((match = anchorRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+  if (popoverDocumentClickHandler) {
+    document.removeEventListener("click", popoverDocumentClickHandler);
+    popoverDocumentClickHandler = null;
+  }
+}
+function createAndShowEpicPopover(targetButton, epic, plugin) {
+  closeCurrentEpicPopover();
+  const popover = document.createElement("div");
+  popover.classList.add("epic-details-popover");
+  popover.style.position = "absolute";
+  popover.style.border = "1px solid var(--background-modifier-border)";
+  popover.style.backgroundColor = "var(--background-secondary)";
+  popover.style.padding = "10px";
+  popover.style.borderRadius = "5px";
+  popover.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
+  popover.style.zIndex = "1000";
+  popover.style.maxWidth = "500px";
+  popover.style.minWidth = "350px";
+  popover.style.overflowY = "auto";
+  popover.style.maxHeight = "450px";
+  const fields = epic.fields;
+  const title = fields["System.Title"] || "N/A";
+  const state = fields["System.State"] || "N/A";
+  const descriptionContent = fields["System.Description"] || "No description available.";
+  let contactsHtml = "<table>";
+  const contactFields = [
+    { label: "Assigned To", fieldName: "System.AssignedTo" },
+    { label: "Created By", fieldName: "System.CreatedBy" },
+    { label: "Changed By", fieldName: "System.ChangedBy" },
+    { label: "Epic Owner", fieldName: "Custom.EnterpriseOneEpicOwner" }
+    // REMINDER: Update this placeholder
+  ];
+  contactFields.forEach((cf) => {
+    const identity = fields[cf.fieldName];
+    if (identity && identity.displayName) {
+      contactsHtml += `<tr><td style="padding-right: 10px;"><strong>${cf.label}:</strong></td><td>${identity.displayName}`;
+      if (identity.uniqueName) {
+        contactsHtml += ` <span style="color: var(--text-muted); font-size: 0.9em;">(${identity.uniqueName})</span>`;
       }
-      frag.appendChild(document.createTextNode(match[0]));
-      const btn = document.createElement("button");
-      btn.textContent = `Epic ${match[1]}`;
-      btn.setAttribute("data-epic-anchor", match[0]);
-      btn.setAttribute("type", "button");
-      btn.style.background = "var(--interactive-accent)";
-      btn.style.color = "var(--text-on-accent)";
-      btn.style.border = "none";
-      btn.style.borderRadius = "4px";
-      btn.style.padding = "2px 8px";
-      btn.style.margin = "0 2px";
-      btn.style.cursor = "pointer";
-      btn.style.transition = "transform 0.1s";
-      btn.onmouseenter = () => btn.style.transform = "scale(1.05)";
-      btn.onmouseleave = () => btn.style.transform = "";
-      btn.onclick = () => {
-        let baseUrl = ctx?.plugin?.settings?.organizationUrl;
-        if (!baseUrl) {
+      contactsHtml += `</td></tr>`;
+    } else {
+      contactsHtml += `<tr><td style="padding-right: 10px;"><strong>${cf.label}:</strong></td><td>N/A</td></tr>`;
+    }
+  });
+  contactsHtml += "</table>";
+  const contactsContent = contactsHtml;
+  const readinessContent = fields["Custom.ReadinessFieldName"] || "Readiness information not available. Configure field name.";
+  const header = document.createElement("h4");
+  header.style.marginTop = "0px";
+  header.style.marginBottom = "10px";
+  header.textContent = `Epic #${epic.id}: ${title}`;
+  popover.appendChild(header);
+  const tabContainer = document.createElement("div");
+  tabContainer.style.display = "flex";
+  tabContainer.style.marginBottom = "10px";
+  tabContainer.style.borderBottom = "1px solid var(--background-modifier-border)";
+  const tabContentContainer = document.createElement("div");
+  tabContentContainer.style.minHeight = "100px";
+  const tabs = [
+    { id: "description", name: "Description", content: descriptionContent },
+    { id: "contacts", name: "Contacts", content: contactsContent },
+    { id: "readiness", name: "Readiness", content: readinessContent }
+  ];
+  tabs.forEach((tabInfo, index) => {
+    const tabButton = document.createElement("button");
+    tabButton.textContent = tabInfo.name;
+    tabButton.style.padding = "8px 12px";
+    tabButton.style.border = "none";
+    tabButton.style.background = "transparent";
+    tabButton.style.cursor = "pointer";
+    tabButton.style.borderBottom = "2px solid transparent";
+    tabButton.style.marginRight = "5px";
+    tabButton.dataset.tabId = tabInfo.id;
+    const tabPane = document.createElement("div");
+    tabPane.id = `tab-pane-${tabInfo.id}`;
+    tabPane.classList.add("epic-popover-tab-pane");
+    tabPane.style.padding = "5px";
+    tabPane.innerHTML = tabInfo.content;
+    if (index !== 0) {
+      tabPane.style.display = "none";
+    } else {
+      tabButton.style.borderBottomColor = "var(--interactive-accent)";
+      tabButton.style.fontWeight = "bold";
+    }
+    tabButton.onclick = () => {
+      tabContainer.querySelectorAll("button").forEach((btn) => {
+        btn.style.borderBottomColor = "transparent";
+        btn.style.fontWeight = "normal";
+      });
+      popover.querySelectorAll(".epic-popover-tab-pane").forEach((pane) => {
+        pane.style.display = "none";
+      });
+      tabButton.style.borderBottomColor = "var(--interactive-accent)";
+      tabButton.style.fontWeight = "bold";
+      const activePane = popover.querySelector(`#tab-pane-${tabInfo.id}`);
+      if (activePane) {
+        activePane.style.display = "block";
+      }
+    };
+    tabContainer.appendChild(tabButton);
+    tabContentContainer.appendChild(tabPane);
+  });
+  popover.appendChild(tabContainer);
+  popover.appendChild(tabContentContainer);
+  const generalInfoContainer = document.createElement("div");
+  generalInfoContainer.style.marginTop = "10px";
+  generalInfoContainer.style.paddingTop = "10px";
+  generalInfoContainer.style.borderTop = "1px solid var(--background-modifier-border)";
+  generalInfoContainer.style.fontSize = "0.9em";
+  let generalInfoHtml = `<strong>State:</strong> ${state}<br>`;
+  generalInfoHtml += `<strong>Created:</strong> ${fields["System.CreatedDate"] ? new Date(fields["System.CreatedDate"]).toLocaleDateString() : "N/A"}<br>`;
+  generalInfoHtml += `<strong>Updated:</strong> ${fields["System.ChangedDate"] ? new Date(fields["System.ChangedDate"]).toLocaleDateString() : "N/A"}`;
+  generalInfoContainer.innerHTML = generalInfoHtml;
+  popover.appendChild(generalInfoContainer);
+  const openInAdoButton = document.createElement("button");
+  openInAdoButton.textContent = "Open in ADO";
+  openInAdoButton.style.marginTop = "15px";
+  openInAdoButton.style.padding = "5px 10px";
+  openInAdoButton.onclick = () => {
+    const orgUrl = plugin.settings?.organizationUrl;
+    const projectName = plugin.settings?.projectName;
+    if (!orgUrl) {
+      new import_obsidian2.Notice("Azure DevOps Organization URL is not set.");
+      return;
+    }
+    if (!projectName) {
+      new import_obsidian2.Notice("Azure DevOps Project Name is not set.");
+      return;
+    }
+    const normalizedOrgUrl = orgUrl.replace(/\/+$/, "");
+    window.open(`${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${epic.id}`, "_blank");
+    closeCurrentEpicPopover();
+  };
+  popover.appendChild(openInAdoButton);
+  document.body.appendChild(popover);
+  currentEpicPopover = popover;
+  const rect = targetButton.getBoundingClientRect();
+  popover.style.top = `${rect.bottom + window.scrollY + 5}px`;
+  popover.style.left = `${rect.left + window.scrollX}px`;
+  const popoverRect = popover.getBoundingClientRect();
+  if (popoverRect.right > window.innerWidth - 10) {
+    popover.style.left = `${window.innerWidth - popoverRect.width - 10 + window.scrollX}px`;
+  }
+  if (popoverRect.left < 10) {
+    popover.style.left = `${10 + window.scrollX}px`;
+  }
+  if (popoverRect.bottom > window.innerHeight - 10) {
+    popover.style.top = `${rect.top + window.scrollY - popoverRect.height - 5}px`;
+  }
+  popoverDocumentClickHandler = (event) => {
+    if (currentEpicPopover && !currentEpicPopover.contains(event.target) && event.target !== targetButton) {
+      closeCurrentEpicPopover();
+    }
+  };
+  setTimeout(() => {
+    if (popoverDocumentClickHandler) {
+      document.addEventListener("click", popoverDocumentClickHandler);
+    }
+  }, 0);
+}
+var EpicAnchorButtonWidget = class extends import_view.WidgetType {
+  constructor(epicId, plugin) {
+    super();
+    this.epicId = epicId;
+    this.plugin = plugin;
+  }
+  toDOM(view) {
+    const button = document.createElement("button");
+    button.classList.add("epic-anchor-button-editor");
+    button.textContent = `Epic #${this.epicId}`;
+    button.style.cursor = "pointer";
+    button.onclick = async (event) => {
+      event.preventDefault();
+      console.log(`Editor Epic Anchor Button - Clicked Epic #${this.epicId}`);
+      const originalButtonText = button.textContent;
+      button.textContent = "Loading...";
+      button.disabled = true;
+      try {
+        if (!this.plugin.settings?.organizationUrl) {
           new import_obsidian2.Notice("Azure DevOps Organization URL is not set in plugin settings.");
+          button.textContent = originalButtonText;
+          button.disabled = false;
           return;
         }
-        baseUrl = baseUrl.replace(/\/+$/, "");
-        window.open(`${baseUrl}/_workitems/edit/${match[1]}`, "_blank");
-      };
-      frag.appendChild(btn);
-      lastIndex = match.index + match[0].length;
+        if (!this.plugin.settings?.pat) {
+          new import_obsidian2.Notice("Azure DevOps PAT is not set in plugin settings.");
+          button.textContent = originalButtonText;
+          button.disabled = false;
+          return;
+        }
+        this.plugin.adoApi.setBaseUrl(this.plugin.settings.organizationUrl);
+        this.plugin.adoApi.setPersonalAccessToken(this.plugin.settings.pat);
+        const epicDetails = await this.plugin.epicsManager.fetchEpicById(this.epicId);
+        console.log(`Editor Epic Anchor Button - Fetched epic details for #${this.epicId}:`, epicDetails);
+        createAndShowEpicPopover(button, epicDetails, this.plugin);
+      } catch (error) {
+        console.error(`Editor Epic Anchor Button - Error fetching epic #${this.epicId}:`, error);
+        new import_obsidian2.Notice(`Failed to fetch Epic #${this.epicId}. See console for details.`);
+      } finally {
+        button.textContent = originalButtonText;
+        button.disabled = false;
+      }
+    };
+    return button;
+  }
+  eq(other) {
+    return other.epicId === this.epicId && other.plugin === this.plugin;
+  }
+  ignoreEvent(event) {
+    return !(event instanceof MouseEvent && event.type === "click");
+  }
+};
+function epicAnchorDecorations(view, plugin) {
+  const builder = new import_state.RangeSetBuilder();
+  const anchorRegex = /<<#(\d+)>>/g;
+  for (const { from, to } of view.visibleRanges) {
+    const text = view.state.doc.sliceString(from, to);
+    let match;
+    while ((match = anchorRegex.exec(text)) !== null) {
+      const anchorStart = from + match.index;
+      const anchorEnd = anchorStart + match[0].length;
+      const epicId = match[1];
+      console.log(`Editor Epic Anchor - Found: ${match[0]} (ID: ${epicId}) at ${anchorStart}-${anchorEnd}`);
+      builder.add(
+        anchorStart,
+        anchorEnd,
+        import_view.Decoration.replace({
+          widget: new EpicAnchorButtonWidget(epicId, plugin),
+          inclusive: false,
+          // Or true, depending on desired behavior with selections
+          block: false
+        })
+      );
     }
-    if (lastIndex < text.length) {
-      frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-    }
-    textNode.parentNode?.replaceChild(frag, textNode);
-  });
+  }
+  return builder.finish();
 }
-ADOPlugin.prototype.onload = /* @__PURE__ */ function(original) {
-  return async function() {
-    await original.call(this);
-    this.registerMarkdownPostProcessor((el, ctx) => epicAnchorPostProcessor(el, { ...ctx, plugin: this }));
-  };
-}(ADOPlugin.prototype.onload);
+var epicAnchorViewPlugin = (plugin) => import_view.ViewPlugin.fromClass(
+  class {
+    constructor(view) {
+      console.log("Editor Epic Anchor ViewPlugin - Initialized");
+      this.decorations = epicAnchorDecorations(view, plugin);
+    }
+    update(update) {
+      if (update.docChanged || update.viewportChanged) {
+        console.log("Editor Epic Anchor ViewPlugin - Updating decorations");
+        this.decorations = epicAnchorDecorations(update.view, plugin);
+      }
+    }
+  },
+  {
+    decorations: (v) => v.decorations
+  }
+);
 /*! Bundled license information:
 
 mime-db/index.js:

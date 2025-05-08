@@ -14,6 +14,7 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
    - The popover features a tabbed interface:
        - **Description Tab**: Shows the Epic's `System.Description`.
        - **Contacts Tab**: Displays key personnel like Assigned To, Created By, Changed By, and other configurable custom contact roles (e.g., Epic Owner, Solution Architect).
+       - **Features Tab**: Lists child Features of the Epic, showing their ID, Title, and State, with direct links to each Feature in ADO.
        - **Readiness Tab**: A configurable tab for displaying readiness information related to the Epic.
    - Includes an "Open in ADO" button to directly navigate to the work item in Azure DevOps.
 

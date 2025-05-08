@@ -5,12 +5,12 @@ import ADOApi from './ado/api.js';
 import { EpicsManager } from './ado/epics.js';
 import { FeaturesManager } from './ado/features.js';
 import SettingsTab from './ui/settingsTab.js';
-import { Epic } from './types/index.js';
+import { Epic, Feature } from './types/index.js'; // Added Feature
 
 export default class ADOPlugin extends Plugin {
     public adoApi!: ADOApi; // Changed from private to public
     public epicsManager!: EpicsManager; // Changed from private to public
-    private featuresManager!: FeaturesManager;
+    public featuresManager!: FeaturesManager; // Changed from private to public
     public settings: any;
 
     async onload() {
@@ -267,6 +267,7 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
 
     // Placeholder: Replace 'Custom.ReadinessFieldName' with the actual ADO field name.
     const readinessContent = fields['Custom.ReadinessFieldName'] || 'Readiness information not available. Configure field name.';
+    const featuresInitialContent = 'Loading features...';
 
     // Header
     const header = document.createElement('h4');
@@ -288,6 +289,7 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
     const tabs = [
         { id: 'description', name: 'Description', content: descriptionContent },
         { id: 'contacts', name: 'Contacts', content: contactsContent },
+        { id: 'features', name: 'Features', content: featuresInitialContent },
         { id: 'readiness', name: 'Readiness', content: readinessContent }
     ];
 
@@ -342,6 +344,42 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
 
     popover.appendChild(tabContainer);
     popover.appendChild(tabContentContainer);
+
+    // Asynchronously load features for the "Features" tab
+    const featuresPane = popover.querySelector('#tab-pane-features') as HTMLElement;
+    if (featuresPane) {
+        plugin.featuresManager.fetchFeaturesByParentId(epic.id)
+            .then(features => {
+                if (!features || features.length === 0) {
+                    featuresPane.innerHTML = 'No features found for this epic.';
+                    return;
+                }
+                let featuresHtml = '<ul style="list-style: none; padding-left: 0;">';
+                const orgUrl = plugin.settings?.organizationUrl;
+                const projectName = plugin.settings?.projectName;
+
+                features.forEach(feature => {
+                    const featureTitle = feature.fields['System.Title'] || 'Untitled Feature';
+                    const featureState = feature.fields['System.State'] || 'Unknown State';
+                    let featureLinkHtml = `<strong>#${feature.id}</strong>: ${featureTitle} [${featureState}]`;
+
+                    if (orgUrl && projectName) {
+                        const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
+                        const featureUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${feature.id}`;
+                        featureLinkHtml = `<a href="${featureUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: var(--text-normal);">${featureLinkHtml}</a>`;
+                    }
+                    
+                    featuresHtml += `<li style="margin-bottom: 5px; padding: 3px; border-bottom: 1px solid var(--background-modifier-border-hover);">${featureLinkHtml}</li>`;
+                });
+                featuresHtml += '</ul>';
+                featuresPane.innerHTML = featuresHtml;
+            })
+            .catch(error => {
+                console.error('Error fetching features for popover:', error);
+                featuresPane.innerHTML = 'Error loading features. See console for details.';
+                new Notice('Failed to load features for epic. See console for details.');
+            });
+    }
     
     const generalInfoContainer = document.createElement('div');
     generalInfoContainer.style.marginTop = '10px';

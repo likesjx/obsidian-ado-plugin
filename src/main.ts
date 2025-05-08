@@ -254,7 +254,9 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
         if (identity && identity.displayName) {
             contactsHtml += `<tr><td style="padding-right: 10px;"><strong>${cf.label}:</strong></td><td>${identity.displayName}`;
             if (identity.uniqueName) {
-                contactsHtml += ` <span style="color: var(--text-muted); font-size: 0.9em;">(${identity.uniqueName})</span>`;
+                // Make uniqueName a link to MS Teams chat
+                const teamsLink = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(identity.uniqueName)}`;
+                contactsHtml += ` <span style="color: var(--text-muted); font-size: 0.9em;">(<a href="${teamsLink}" target="_blank" rel="noopener noreferrer" title="Chat on Teams with ${identity.displayName} (${identity.uniqueName})">${identity.uniqueName}</a>)</span>`;
             }
             contactsHtml += `</td></tr>`;
         } else {

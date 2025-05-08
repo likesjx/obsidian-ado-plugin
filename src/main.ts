@@ -236,9 +236,32 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
     const state = fields['System.State'] || 'N/A';
     const descriptionContent = fields['System.Description'] || 'No description available.';
     
-    // Placeholder: Replace 'Custom.ContactsFieldName' and 'Custom.ReadinessFieldName'
-    // with the actual ADO field names for these tabs from your ADO process template.
-    const contactsContent = fields['Custom.ContactsFieldName'] || 'Contacts information not available. Configure field name.';
+    // --- Contacts Tab Content ---
+    let contactsHtml = '<table>';
+    const contactFields = [
+        { label: 'Assigned To', fieldName: 'System.AssignedTo' },
+        { label: 'Created By', fieldName: 'System.CreatedBy' },
+        { label: 'Changed By', fieldName: 'System.ChangedBy' },
+        { label: 'Epic Owner', fieldName: 'Custom.EnterpriseOneEpicOwner' } // REMINDER: Update this placeholder
+    ];
+
+    contactFields.forEach(cf => {
+        const identity = fields[cf.fieldName] as import('./types/index.js').AdoIdentity | undefined;
+        if (identity && identity.displayName) {
+            contactsHtml += `<tr><td style="padding-right: 10px;"><strong>${cf.label}:</strong></td><td>${identity.displayName}`;
+            if (identity.uniqueName) {
+                contactsHtml += ` <span style="color: var(--text-muted); font-size: 0.9em;">(${identity.uniqueName})</span>`;
+            }
+            contactsHtml += `</td></tr>`;
+        } else {
+            contactsHtml += `<tr><td style="padding-right: 10px;"><strong>${cf.label}:</strong></td><td>N/A</td></tr>`;
+        }
+    });
+    contactsHtml += '</table>';
+    const contactsContent = contactsHtml;
+    // --- End Contacts Tab Content ---
+
+    // Placeholder: Replace 'Custom.ReadinessFieldName' with the actual ADO field name.
     const readinessContent = fields['Custom.ReadinessFieldName'] || 'Readiness information not available. Configure field name.';
 
     // Header

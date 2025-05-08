@@ -1,3 +1,12 @@
+export interface AdoIdentity {
+    displayName: string;
+    url?: string;
+    id?: string;
+    uniqueName?: string; // Often the email or UPN
+    imageUrl?: string;
+    descriptor?: string;
+}
+
 export interface Epic {
     id: number; // ADO IDs are numbers
     rev: number;
@@ -7,7 +16,11 @@ export interface Epic {
         "System.State": string;
         "System.CreatedDate": string; // Dates are strings from API, convert to Date objects as needed
         "System.ChangedDate": string; // ADO uses ChangedDate for last update
-        // Add other fields as needed, e.g., System.AreaPath, System.IterationPath, Microsoft.VSTS.Common.Priority
+        "System.AssignedTo"?: AdoIdentity;
+        "System.CreatedBy"?: AdoIdentity;
+        "System.ChangedBy"?: AdoIdentity;
+        "Custom.EnterpriseOneEpicOwner"?: AdoIdentity; // Placeholder - replace with actual field name
+        // Add other fields as needed
         [key: string]: any; // Allow other fields
     };
     // _links?: any; // For HATEOAS links if needed
@@ -15,6 +28,7 @@ export interface Epic {
 }
 
 // Assuming Feature also follows a similar nested structure from ADO API
+// and might have similar identity fields
 export interface Feature {
     id: number;
     rev: number;
@@ -25,6 +39,9 @@ export interface Feature {
         "System.CreatedDate": string;
         "System.ChangedDate": string;
         "System.Parent"?: number; // To link to Epic ID
+        "System.AssignedTo"?: AdoIdentity;
+        "System.CreatedBy"?: AdoIdentity;
+        "System.ChangedBy"?: AdoIdentity;
         [key: string]: any;
     };
 }

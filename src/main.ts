@@ -230,13 +230,22 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
     popover.style.overflowY = 'auto';
     popover.style.maxHeight = '300px';
 
+    const fields = epic.fields;
+    const title = fields['System.Title'] || 'N/A';
+    const state = fields['System.State'] || 'N/A';
+    // ADO description can be HTML. For simplicity, we'll display it as is.
+    // For a more robust solution, sanitize or render HTML carefully.
+    const description = fields['System.Description'] || 'N/A';
+    const createdDate = fields['System.CreatedDate'] ? new Date(fields['System.CreatedDate']).toLocaleDateString() : 'N/A';
+    const updatedDate = fields['System.ChangedDate'] ? new Date(fields['System.ChangedDate']).toLocaleDateString() : 'N/A';
 
-    let contentHtml = `<h4>Epic #${epic.id}: ${epic.title}</h4>`;
+
+    let contentHtml = `<h4>Epic #${epic.id}: ${title}</h4>`;
     contentHtml += '<table>';
-    contentHtml += `<tr><td><strong>State:</strong></td><td>${epic.state || 'N/A'}</td></tr>`;
-    contentHtml += `<tr><td style="vertical-align: top;"><strong>Description:</strong></td><td>${epic.description ? epic.description.replace(/\n/g, '<br>') : 'N/A'}</td></tr>`;
-    contentHtml += `<tr><td><strong>Created:</strong></td><td>${epic.createdDate ? new Date(epic.createdDate).toLocaleDateString() : 'N/A'}</td></tr>`;
-    contentHtml += `<tr><td><strong>Updated:</strong></td><td>${epic.updatedDate ? new Date(epic.updatedDate).toLocaleDateString() : 'N/A'}</td></tr>`;
+    contentHtml += `<tr><td><strong>State:</strong></td><td>${state}</td></tr>`;
+    contentHtml += `<tr><td style="vertical-align: top;"><strong>Description:</strong></td><td>${description}</td></tr>`; // Displaying raw, could be HTML
+    contentHtml += `<tr><td><strong>Created:</strong></td><td>${createdDate}</td></tr>`;
+    contentHtml += `<tr><td><strong>Updated:</strong></td><td>${updatedDate}</td></tr>`;
     contentHtml += '</table>';
     
     const openInAdoButton = document.createElement('button');

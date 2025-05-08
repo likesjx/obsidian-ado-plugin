@@ -20,7 +20,9 @@ export interface Epic {
         "System.CreatedBy"?: AdoIdentity;
         "System.ChangedBy"?: AdoIdentity;
         "Custom.EnterpriseOneEpicOwner"?: AdoIdentity; // Placeholder - replace with actual field name
-        // Add other fields as needed
+        "Custom.ProjectManager"?: AdoIdentity; // Placeholder - replace with actual field name
+        "Custom.TechnicalLead"?: AdoIdentity; // Placeholder - replace with actual field name
+        // Add other custom contact fields here as AdoIdentity or appropriate type
         [key: string]: any; // Allow other fields
     };
     // _links?: any; // For HATEOAS links if needed

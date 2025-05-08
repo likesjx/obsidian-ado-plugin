@@ -1,0 +1,134 @@
+{
+    "id": 1529093,
+    "rev": 19,
+    "fields": {
+        "System.AreaPath": "Consumer Technology eXperience (Prod)\\CTX Portfolio",
+        "System.TeamProject": "Consumer Technology eXperience (Prod)",
+        "System.IterationPath": "Consumer Technology eXperience (Prod)",
+        "System.WorkItemType": "Epic",
+        "System.State": "In Progress",
+        "System.Reason": "Moved out of state Funnel",
+        "System.AssignedTo": {
+            "displayName": "NOGINSKY, FLORINA",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+                }
+            },
+            "id": "995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "uniqueName": "fn607x@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2",
+            "descriptor": "aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+        },
+        "System.CreatedDate": "2025-04-06T01:57:21.29Z",
+        "System.CreatedBy": {
+            "displayName": "NOGINSKY, FLORINA",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+                }
+            },
+            "id": "995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "uniqueName": "fn607x@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2",
+            "descriptor": "aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+        },
+        "System.ChangedDate": "2025-04-29T21:02:24.943Z",
+        "System.ChangedBy": {
+            "displayName": "NOGINSKY, FLORINA",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+                }
+            },
+            "id": "995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "uniqueName": "fn607x@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2",
+            "descriptor": "aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+        },
+        "System.CommentCount": 0,
+        "System.Title": "RTB Service POD - Protect Advantage Open Enrollment Optimizations",
+        "System.BoardColumn": "In Progress",
+        "System.BoardColumnDone": false,
+        "Microsoft.VSTS.Common.StateChangeDate": "2025-04-17T07:12:28.513Z",
+        "Microsoft.VSTS.Common.ActivatedDate": "2025-04-17T07:12:28.513Z",
+        "Microsoft.VSTS.Common.ActivatedBy": {
+            "displayName": "LOPEZ, CHARLES A",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/0dc13b0c-e43b-69ea-aab1-85d3c7dab9de",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.MGRjMTNiMGMtZTQzYi03OWVhLWFhYjEtODVkM2M3ZGFiOWRl"
+                }
+            },
+            "id": "0dc13b0c-e43b-69ea-aab1-85d3c7dab9de",
+            "uniqueName": "cl5410@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.MGRjMTNiMGMtZTQzYi03OWVhLWFhYjEtODVkM2M3ZGFiOWRl",
+            "descriptor": "aad.MGRjMTNiMGMtZTQzYi03OWVhLWFhYjEtODVkM2M3ZGFiOWRl"
+        },
+        "Microsoft.VSTS.Common.Priority": 1,
+        "Microsoft.VSTS.Common.ValueArea": "Business",
+        "Microsoft.VSTS.Scheduling.TargetDate": "2025-10-31T05:00:00Z",
+        "Microsoft.VSTS.Scheduling.StartDate": "2025-04-16T05:00:00Z",
+        "Custom.EnterpriseOneEpicOwner": {
+            "displayName": "NOGINSKY, FLORINA",
+            "url": "https://spsprodcus1.vssps.visualstudio.com/A9c3fc105-b755-42e8-8f7c-7b4d2e79fbdb/_apis/Identities/995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "_links": {
+                "avatar": {
+                    "href": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+                }
+            },
+            "id": "995d4b98-ab6e-68e2-87ce-26f4900caed6",
+            "uniqueName": "fn607x@att.com",
+            "imageUrl": "https://dev.azure.com/ACC-Azure-02/_apis/GraphProfile/MemberAvatars/aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2",
+            "descriptor": "aad.OTk1ZDRiOTgtYWI2ZS03OGUyLTg3Y2UtMjZmNDkwMGNhZWQ2"
+        },
+        "Custom.EnterpriseOneEpicID": "1012362",
+        "Custom.InProgressDate": "2025-04-17T07:12:28.513Z",
+        "Custom.WSJF": 0.0,
+        "Custom.TShirtSize": "Large",
+        "Custom.QuickbaseID": "309",
+        "WEF_AF8A2838F28F49B0B9C1C3DEE5FCFE5C_Kanban.Column": "In Progress",
+        "WEF_AF8A2838F28F49B0B9C1C3DEE5FCFE5C_Kanban.Column.Done": false,
+        "Custom.RequestingBusinessUnit": "Digital Fixed-Capacity",
+        "Custom.CTXEpicCategory": "Client Sponsored",
+        "Custom.SignificantOpenQuestions": false,
+        "Custom.CTXProgramIncrement": "PI 24",
+        "Custom.CommittoWork": "PI 24",
+        "Custom.PrimaryJourneyDomain": "Service Support",
+        "WEF_D72B03D1C35E43D595019A79C41083F8_Kanban.Column": "In Progress",
+        "WEF_D72B03D1C35E43D595019A79C41083F8_Kanban.Column.Done": false,
+        "Custom.BRStatus": "Not Started",
+        "Custom.SubmittedtoCapPlanning": false,
+        "System.Description": "<div><span><b>DAC Intake: 309</b></span> </div><div><span><b><br></b></span> </div><div><span><b>WHY</b></span><span> </span> </div><div>Enhance the post-purchase experience for customers by improving the deep links &amp; BAU flows used for promoting add-ons such as Protect Advantage plan tiers. The goal is to create an engaging, informative, and user-friendly experience that encourages customers to explore and adopt additional services.<br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div><br> </div><div>Customer Challenges with Deep link Experience:<br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div><ul><li>Initial Step to Identify line intent: Customers feel discouraged from exploring add-ons further because the current process begins by asking for line intent, which is seen as a barrier. </li><li>Lack of Information: Customers do not understand which option—Protect Advantage for 4 or Protect Advantage for 1—is the best fit for them due to insufficient information and guidance. </li><li>&nbsp;Limited Visual Appeal: Customers are not engaged or interested in learning about the add-ons because the experience lacks engaging lifestyle images and videos. </li> </ul><span>&nbsp;Eligibi</span><span>lity Check Inaccuracy: Customers receive inaccurate information about their device eligibility for Protect Advantage because the device is either a BYOD or older than 4 years.&nbsp;</span><br><p style=\"margin:0in 0in 0in 0.5in;font-size:11pt;\"> </p><ul><li><span style=\"background:yellow;\"><font face=\"Calibri, sans-serif\"><span>OE&nbsp; February 2025 DLC Issues:</span></font></span><span style=\"font-family:Calibri, sans-serif;background:yellow;\"><span>&nbsp;</span></span><span style=\"font-family:Calibri, sans-serif;background:rgb(255, 255, 255);\">9,7</span><span style=\"font-family:Calibri, sans-serif;\">03 digital\nfallout</span> </li> </ul><p> </p><p style=\"margin:0in 0in 8pt 0.5in;font-size:11pt;font-family:Calibri, sans-serif;\"> </p><ul><li><span>OE February &amp; July 2024 DLC Issues: 15K\ndigital fallout</span> </li> </ul><p> </p> </div><div><br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div>Customer Challenges with BAU Add-on Experience (aka navigations from AO to Add-ons):&nbsp;&nbsp;<br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div><ul><li>Limited Visual Appeal: Customers are not engaged or interested in learning about the add-ons because the experience lacks engaging lifestyle images and videos. </li><li>Static Messaging Regardless of Status: Customers are not provided with a tailored message specific to their enrollment status, leading to confusion and a lack of perceived value for the add-on on the add-on page. This fails to deliver a sales message to customers who do not have the add-on and the essential retention or management message to those who already have it.&nbsp; </li> </ul> </div><div><br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div><b>WHAT</b> </div><div><br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div>Enhanced Learning Experience:<br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div><ul><li>Improve awareness by placing visually appealing Open Enrollment merchandizing tile for engagement with the Protect Advantage offering on high traffic digital assets. </li><li>Visually Rich Content: Incorporate lifestyle images and revised copy to provide a comprehensive understanding of each add-on. </li><li>Informative Descriptions: Offer detailed information about the benefits and features of each add-on, enabling customers to make informed decisions. </li> </ul> </div><div>User Sales Journey Refinement:<br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div><ul><li>Initial Information Phase: Allow customers to first learn about the add-ons in a visually engaging manner before any intent is requested. </li><li>Options Presentation: Display available add-on options in a clear and organized manner. </li><li>Coverage Check: Determine which lines already have the add-on or coverage and present this information at the end of the journey vs the beginning. </li><li>Address current DLC device records gaps (device &gt;4 years old and BYOD device) to improve eligibility check for Protect Advantage. </li> </ul> </div><div>Add-on Management Journey Refinement:<br style=\"color:rgb(51, 51, 51);font-family:Gibson-Regular, Helvetica, Arial, sans-serif;font-size:12px;letter-spacing:0.1px;text-align:left;\"> </div><div><ul><li>&nbsp;Retention Message: Highlight the ongoing benefits and value of the add-on, reinforcing the customer's decision to keep it. </li><li>Usage Tips: Provide information on how to maximize the use of the add-on, ensuring customers are fully aware of its features and capabilities. </li><li>Upgrade Options: Offer information on upgrading to a higher-tier add-on if applicable. This can include details on additional features and benefits that come with the upgrade. </li><li>Management Options: Clearly outline the steps for managing the add-on, including how to remove it if necessary or place a claim if there are any issues. </li> </ul><div>=========================================================================================== </div><div><b>MVP 1:&nbsp;&nbsp;</b><span><b>For 6/1/2025</b> Open Enrollment readiness:</span> </div><div><ul><li><span>Address DLC device record for SKU lookup as follows:<br>For BYOD devices with unknown SKU, the solution will default to select the PA1 Tier 2 plan @ $14 MRC per business decision. For &gt;4 year old devices, the solution will look in archived records for SKU.</span> </li><li>Add a new merchandizing card for Open Enrollment on the MyWireless hub with IXP flag to display visually appealing imagery and copy. Create a new link to take customer from MyWireless banner into PA category lander to support new navigational needs. </li><li>Implement analytics instrumentation for enhanced reporting. </li> </ul><div>Hiren's Note:&nbsp; we cannot integrate Asurion API - much effort to expose external API for integration and we have on control over their SLA for delivery or cost.<br><br> </div><div><br> </div><div><b>MVP 2: </b>Simplify PA deeplink experience by allowing a customer naturally progress through discovery of product to selecting which lines to add the product to. This capability will inform customer if line(s) on the account already have PA coverage, which lines are eligible/ineligible, recommend a plan tier based on multiple line selection (PA4 when more than 3 lines selected on the account), and allow customer to submit a bulk order in one transaction. Solution will support partial submitted bulk order. </div> </div><div><br> </div> </div><div><br> </div><div> </div><div><span><b>BENEFITS</b></span> </div><div><span>Calls Shed - 42K/year</span> </div><div>CSAT improvement by 0.15 pts </div><div>Incremental New adds - 34K </div><div><br> </div><div><br> </div>",
+        "Custom.BusinessOutcomesorSuccessCriteria": "<div>This effort aims to revamp the post-purchase add-on deep links &amp; BAU flows to provide a visually appealing, informative, and customer-centric experience. By addressing current challenges and implementing the proposed improvements, we anticipate higher engagement and conversion rates, leading to enhanced customer satisfaction. Included add-ons are Protect Advantage tiered plans.&nbsp;<br> </div>",
+        "Custom.CTXProductTeams": "Commerce Services;SPT-Analytics;Web-Post Purchase",
+        "Custom.Applications": "IDP-WebAcctMgmt:32768"
+    },
+    "_links": {
+        "self": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1529093"
+        },
+        "workItemUpdates": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1529093/updates"
+        },
+        "workItemRevisions": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1529093/revisions"
+        },
+        "workItemComments": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1529093/comments"
+        },
+        "html": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_workitems/edit/1529093"
+        },
+        "workItemType": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItemTypes/Epic"
+        },
+        "fields": {
+            "href": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/fields"
+        }
+    },
+    "url": "https://dev.azure.com/ACC-Azure-02/a3edffe4-1ec3-463b-9128-0752f0eef744/_apis/wit/workItems/1529093"
+}

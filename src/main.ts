@@ -360,21 +360,57 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
                 const orgUrl = plugin.settings?.organizationUrl;
                 const projectName = plugin.settings?.projectName;
 
-                features.forEach(feature => {
+                features.forEach((feature, index) => {
                     const featureTitle = feature.fields['System.Title'] || 'Untitled Feature';
                     const featureState = feature.fields['System.State'] || 'Unknown State';
-                    let featureLinkHtml = `<strong>#${feature.id}</strong>: ${featureTitle} [${featureState}]`;
+                    const featureDescription = feature.fields['System.Description'] || 'No description available.';
+                    const featureId = feature.id; // Store for use in element IDs
 
+                    // Header part of the feature item (clickable)
+                    let featureHeaderHtml = `<div class="feature-header" data-feature-index="${index}" style="cursor: pointer; padding: 5px; border-bottom: 1px solid var(--background-modifier-border-hover);">`;
+                    featureHeaderHtml += `<strong>#${featureId}</strong>: ${featureTitle} [${featureState}]`;
+                    
+                    // Add ADO link to the header
                     if (orgUrl && projectName) {
                         const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
-                        const featureUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${feature.id}`;
-                        featureLinkHtml = `<a href="${featureUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: var(--text-normal);">${featureLinkHtml}</a>`;
+                        const featureUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${featureId}`;
+                        featureHeaderHtml += ` <a href="${featureUrl}" target="_blank" rel="noopener noreferrer" title="Open Feature #${featureId} in ADO" style="text-decoration: none; color: var(--interactive-accent); font-size: 0.85em;">(Open in ADO)</a>`;
                     }
+                    featureHeaderHtml += `</div>`;
+
+                    // Content part of the feature item (collapsible)
+                    // Ensure IDs are unique if multiple popovers could exist, though current logic closes old ones.
+                    const contentId = `feature-content-${epic.id}-${featureId}`;
+                    let featureContentHtml = `<div id="${contentId}" class="feature-content" style="display: none; padding: 10px; margin-left: 15px; border-left: 2px solid var(--background-modifier-border); background-color: var(--background-primary-alt);">`;
+                    // ADO descriptions are HTML, so use innerHTML
+                    featureContentHtml += `<div>${featureDescription}</div>`;
+                    featureContentHtml += `</div>`;
                     
-                    featuresHtml += `<li style="margin-bottom: 5px; padding: 3px; border-bottom: 1px solid var(--background-modifier-border-hover);">${featureLinkHtml}</li>`;
+                    featuresHtml += `<li style="margin-bottom: 2px;">${featureHeaderHtml}${featureContentHtml}</li>`;
                 });
                 featuresHtml += '</ul>';
                 featuresPane.innerHTML = featuresHtml;
+
+                // Add click listeners to feature headers to toggle content visibility
+                featuresPane.querySelectorAll('.feature-header').forEach(headerElement => {
+                    headerElement.addEventListener('click', (event) => {
+                        // Prevent ADO link click from also triggering collapse/expand if on the link itself
+                        if ((event.target as HTMLElement).tagName === 'A') {
+                            return;
+                        }
+                        const featureIndex = headerElement.getAttribute('data-feature-index');
+                        if (featureIndex === null) return;
+                        
+                        const clickedFeature = features[parseInt(featureIndex, 10)];
+                        const contentElementId = `feature-content-${epic.id}-${clickedFeature.id}`;
+                        const contentElement = featuresPane.querySelector(`#${contentElementId}`) as HTMLElement | null;
+
+                        if (contentElement) {
+                            const isVisible = contentElement.style.display !== 'none';
+                            contentElement.style.display = isVisible ? 'none' : 'block';
+                        }
+                    });
+                });
             })
             .catch(error => {
                 console.error('Error fetching features for popover:', error);

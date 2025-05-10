@@ -44,7 +44,7 @@ export default class ADOPlugin extends Plugin {
         this.registerMarkdownPostProcessor((element: HTMLElement, context: MarkdownPostProcessorContext) => {
             // Find code elements that look like our anchors
             const codeElements = element.querySelectorAll('code');
-            codeElements.forEach(codeEl => {
+            codeElements.forEach((codeEl: HTMLElement) => { // Added explicit type
                 const anchorText = codeEl.textContent;
                 if (anchorText && anchorText.startsWith('<<#') && anchorText.endsWith('>>')) {
                     const match = anchorText.match(/<<#(\d+)>>/);
@@ -510,7 +510,8 @@ class EpicAnchorButtonWidget extends WidgetType {
     }
 
     eq(other: EpicAnchorButtonWidget): boolean {
-        return other.epicId === this.epicId && other.plugin === this.plugin;
+        // Compare all readonly properties for an accurate equality check
+        return other.epicId === this.epicId && other.plugin === this.plugin && other.view === this.view;
     }
 
     ignoreEvent(event: Event): boolean {
@@ -531,15 +532,13 @@ function epicAnchorDecorations(view: EditorView, plugin: ADOPlugin) {
             const anchorEnd = anchorStart + match[0].length;
             const epicId = match[1];
 
-            console.log(`Editor Epic Anchor - Found: ${match[0]} (ID: ${epicId}) at ${anchorStart}-${anchorEnd}`);
-
+            // console.log(`Editor Epic Anchor - Rendering: ${match[0]} (ID: ${epicId}) at ${anchorStart}-${anchorEnd}`); // Optional
             builder.add(
                 anchorStart,
                 anchorEnd,
                 Decoration.replace({
-                    widget: new EpicAnchorButtonWidget(epicId, plugin),
-                    inclusive: false, // Or true, depending on desired behavior with selections
-                    block: false
+                    widget: new EpicAnchorButtonWidget(epicId, plugin, view),
+                    side: -1 // Prefer placing widget before the replaced range if possible, helps with cursor behavior
                 })
             );
         }
@@ -551,19 +550,15 @@ const epicAnchorViewPlugin = (plugin: ADOPlugin) => ViewPlugin.fromClass(
     class {
         decorations: DecorationSet;
 
-        constructor(view: EditorView) {
-            console.log('Editor Epic Anchor ViewPlugin - Initialized');
-            this.decorations = epicAnchorDecorations(view, plugin);
+        constructor(currentView: EditorView) { // Renamed to avoid conflict with 'view' property in widget
+            this.decorations = epicAnchorDecorations(currentView, plugin);
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged) {
-                console.log('Editor Epic Anchor ViewPlugin - Updating decorations');
+            if (update.docChanged || update.viewportChanged || update.selectionSet) { // Added selectionSet for robustness
                 this.decorations = epicAnchorDecorations(update.view, plugin);
             }
         }
-    },
-    {
-        decorations: v => v.decorations,
-    }
-);
+    }, {
+    decorations: v => v.decorations
+});

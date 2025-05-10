@@ -7,16 +7,22 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
 - **Manage Epics**: Create, update, and delete epics in Azure DevOps.
 - **Manage Features**: Create, update, and delete features associated with epics.
 - **User Settings**: Customize plugin settings through a dedicated settings tab.
-- **Epic Anchors & Details Popover**:
+- **Epic Anchors & Inline/Modal Views**:
    - Insert epic anchors (e.g., `<<#12345>>`) into your notes using a command.
-   - In Reading and Live Preview modes, these anchors render as clickable buttons.
-   - Clicking an epic button fetches its details from Azure DevOps and displays them in a popover.
-   - The popover features a tabbed interface:
+   - **Reading & Live Preview Modes**:
+       - Anchors (`<<#ID>>`) are rendered as an inline, expandable block.
+       - This block initially shows a header with the Epic ID, Title, State, and an "Expand" control.
+       - Clicking the header fetches Epic details from Azure DevOps and expands the block to show a tabbed interface.
+       - The inline view attempts to use the full width of the text column.
+   - **Editor Mode**:
+       - Anchors render as clickable buttons (e.g., `Epic #12345`).
+       - Clicking this button fetches Epic details and displays them in a **modal window**.
+   - **Tabbed Interface (in both inline view and modal)**:
        - **Description Tab**: Shows the Epic's `System.Description`.
-       - **Contacts Tab**: Displays key personnel like Assigned To, Created By, Changed By, and other configurable custom contact roles (e.g., Epic Owner, Solution Architect). User email addresses (unique names) are linked to directly open a chat in Microsoft Teams.
-       - **Features Tab**: Lists child Features of the Epic. Each feature displays its ID, Title, and State. Clicking on a feature's header will expand it to show its description. Each feature header also includes a direct link to open the item in ADO.
+       - **Contacts Tab**: Displays key personnel (Assigned To, Created By, Changed By, and custom roles like Epic Owner). User email addresses are linked to Microsoft Teams for quick chat.
+       - **Features Tab**: Lists child Features of the Epic. Each feature is an expandable item showing its ID, Title, and State in the header. Clicking a feature expands it to show its description. Each feature header also includes a direct link to open the item in ADO.
        - **Readiness Tab**: A configurable tab for displaying readiness information related to the Epic.
-   - Includes an "Open in ADO" button to directly navigate to the work item in Azure DevOps.
+   - Both views include an "Open Epic in ADO" button to directly navigate to the work item in Azure DevOps.
 
 ## Installation
 

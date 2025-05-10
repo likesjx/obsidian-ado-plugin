@@ -42,85 +42,116 @@ export default class ADOPlugin extends Plugin {
 
         console.log('Registering Epic Anchor Post Processor');
         this.registerMarkdownPostProcessor((element: HTMLElement, context: MarkdownPostProcessorContext) => {
-            console.log('Epic Anchor Post Processor - Processing element:', element);
-            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-            let node;
-            const nodesToReplace: {node: Node, epicId: string, fullMatch: string}[] = [];
+            // Find code elements that look like our anchors
+            const codeElements = element.querySelectorAll('code');
+            codeElements.forEach(codeEl => {
+                const anchorText = codeEl.textContent;
+                if (anchorText && anchorText.startsWith('<<#') && anchorText.endsWith('>>')) {
+                    const match = anchorText.match(/<<#(\d+)>>/);
+                    if (match && match[1]) {
+                        const epicId = match[1];
 
-            while (node = walker.nextNode()) {
-                if (node.nodeValue) {
-                    const regex = /<<#(\d+)>>/g;
-                    let match;
-                    // Find all matches in the current text node
-                    while ((match = regex.exec(node.nodeValue)) !== null) {
-                        console.log(`Epic Anchor Post Processor - Found anchor: ${match[0]} with ID: ${match[1]} in node:`, node);
-                        nodesToReplace.push({ node, epicId: match[1], fullMatch: match[0] });
+                        // Check if this anchor's container has already been processed to avoid re-processing
+                        // The actual replacement target (paragraph or the code element itself if inline)
+                        let potentialContainer = codeEl.parentElement;
+                        if (potentialContainer && potentialContainer.classList.contains('ado-epic-view-container')) {
+                            return; // Already processed and replaced
+                        }
+                        // If the codeEl itself was replaced, it wouldn't be found again.
+                        // This check is more for cases where the parent paragraph might be re-evaluated.
+
+                        // More robust check: if the codeEl itself has a marker or its direct parent is the container
+                        if (codeEl.dataset.adoProcessed === 'true') return;
+
+
+                        const container = document.createElement('div');
+                        container.classList.add('ado-epic-view-container');
+                        container.style.width = '100%'; // Attempt to take full width of its parent column
+                        container.style.marginBottom = '1em';
+                        container.style.border = '1px solid var(--background-modifier-border)';
+                        container.style.borderRadius = '5px';
+                        container.style.boxSizing = 'border-box'; // Include padding and border in the element's total width and height
+
+                        const header = document.createElement('div');
+                        header.classList.add('ado-epic-header');
+                        header.style.padding = '10px';
+                        header.style.cursor = 'pointer';
+                        header.style.backgroundColor = 'var(--background-secondary)';
+                        header.style.borderBottom = '1px solid var(--background-modifier-border)';
+                        header.innerHTML = `<strong>Epic #${epicId}</strong> <span class="ado-epic-title-placeholder"></span> <span class="ado-epic-state-placeholder"></span> <span class="ado-epic-toggle-indicator" style="float: right; font-weight: normal; color: var(--text-muted);">[+] Expand</span>`;
+                        
+                        const contentArea = document.createElement('div');
+                        contentArea.classList.add('ado-epic-content');
+                        contentArea.style.display = 'none';
+                        contentArea.style.padding = '10px';
+                        contentArea.dataset.loaded = 'false';
+
+                        container.appendChild(header);
+                        container.appendChild(contentArea);
+
+                        // Determine what to replace.
+                        // If the <code> is the only child of a <p>, replace the <p>.
+                        // Otherwise, replace the <code> itself.
+                        let replacementTarget: Element = codeEl;
+                        if (codeEl.parentElement && codeEl.parentElement.tagName === 'P' && codeEl.parentElement.childNodes.length === 1) {
+                            replacementTarget = codeEl.parentElement;
+                        } else {
+                             // Mark the original code element so we don't reprocess if it's somehow still in DOM during another pass
+                            codeEl.dataset.adoProcessed = 'true';
+                        }
+                        
+                        replacementTarget.replaceWith(container);
+
+                        header.onclick = async () => {
+                            const isHidden = contentArea.style.display === 'none';
+                            const toggleIndicator = header.querySelector('.ado-epic-toggle-indicator') as HTMLElement;
+
+                            if (isHidden) { // Expanding
+                                contentArea.style.display = 'block';
+                                if (toggleIndicator) toggleIndicator.textContent = '[-] Collapse';
+
+                                if (contentArea.dataset.loaded === 'false') {
+                                    contentArea.innerHTML = '<em>Loading Epic details...</em>';
+                                    try {
+                                        if (!this.settings?.organizationUrl || !this.settings?.pat) {
+                                            new Notice('Azure DevOps connection details are not set.');
+                                            contentArea.innerHTML = '<p style="color:var(--text-error);">Error: ADO settings missing.</p>';
+                                            if (toggleIndicator) toggleIndicator.textContent = '[+] Expand (Error)';
+                                            return;
+                                        }
+                                        this.adoApi.setBaseUrl(this.settings.organizationUrl);
+                                        this.adoApi.setPersonalAccessToken(this.settings.pat);
+
+                                        const epicDetails = await this.epicsManager.fetchEpicById(epicId);
+                                        
+                                        const titlePlaceholder = header.querySelector('.ado-epic-title-placeholder') as HTMLElement;
+                                        const statePlaceholder = header.querySelector('.ado-epic-state-placeholder') as HTMLElement;
+                                        if (titlePlaceholder) titlePlaceholder.textContent = `: ${epicDetails.fields['System.Title'] || 'N/A'}`;
+                                        if (statePlaceholder) statePlaceholder.textContent = `[${epicDetails.fields['System.State'] || 'N/A'}]`;
+                                        
+                                        // Features will be fetched by buildEpicInnerHtml's onRender if not passed
+                                        const { html, onRender } = buildEpicInnerHtml(epicDetails, [], this, false); // Pass empty features, onRender will fetch
+                                        contentArea.innerHTML = html;
+                                        if (onRender) {
+                                            onRender(contentArea);
+                                        }
+                                        contentArea.dataset.loaded = 'true';
+
+                                    } catch (error) {
+                                        console.error(`Error fetching Epic #${epicId} for inline view:`, error);
+                                        contentArea.innerHTML = `<p style="color:var(--text-error);">Failed to load Epic #${epicId}. See console.</p>`;
+                                        new Notice(`Failed to load Epic #${epicId}.`);
+                                        if (toggleIndicator) toggleIndicator.textContent = '[+] Expand (Error)';
+                                    }
+                                }
+                            } else { // Collapsing
+                                contentArea.style.display = 'none';
+                                if (toggleIndicator) toggleIndicator.textContent = '[+] Expand';
+                            }
+                        };
                     }
                 }
-            }
-
-            // Perform replacements after iterating to avoid issues with modifying the DOM during traversal
-            for (const item of nodesToReplace) {
-                const { node, epicId, fullMatch } = item;
-                if (!node.parentElement) continue; // Skip if node is detached
-
-                const button = document.createElement('button');
-                button.classList.add('epic-anchor-button');
-                button.textContent = `Epic #${epicId}`;
-                button.onclick = async () => {
-                    console.log(`Epic Anchor Post Processor - Button for Epic #${epicId} clicked.`);
-                    const originalButtonText = button.textContent;
-                    button.textContent = 'Loading...';
-                    button.disabled = true;
-
-                    try {
-                        if (!this.settings?.organizationUrl) {
-                            new Notice('Azure DevOps Organization URL is not set in plugin settings.');
-                            button.textContent = originalButtonText;
-                            button.disabled = false;
-                            return;
-                        }
-                         if (!this.settings?.pat) {
-                            new Notice('Azure DevOps PAT is not set in plugin settings.');
-                            button.textContent = originalButtonText;
-                            button.disabled = false;
-                            return;
-                        }
-                        // Ensure API client is configured with latest settings
-                        this.adoApi.setBaseUrl(this.settings.organizationUrl);
-                        this.adoApi.setPersonalAccessToken(this.settings.pat);
-
-                        const epicDetails = await this.epicsManager.fetchEpicById(epicId);
-                        console.log(`Epic Anchor Post Processor - Fetched epic details for #${epicId}:`, epicDetails);
-                        createAndShowEpicPopover(button, epicDetails, this);
-                    } catch (error) {
-                        console.error(`Epic Anchor Post Processor - Error fetching epic #${epicId}:`, error);
-                        new Notice(`Failed to fetch Epic #${epicId}. See console for details.`);
-                    } finally {
-                        button.textContent = originalButtonText;
-                        button.disabled = false;
-                    }
-                };
-
-                // If the entire text node is the anchor
-                if (node.nodeValue === fullMatch) {
-                    console.log(`Epic Anchor Post Processor - Replacing entire node with button for Epic #${epicId}`);
-                    node.parentElement.replaceChild(button, node);
-                } else {
-                    // If the anchor is part of a larger text node, split the node
-                    const parts = node.nodeValue!.split(fullMatch);
-                    const parent = node.parentElement;
-                    
-                    console.log(`Epic Anchor Post Processor - Splitting node and inserting button for Epic #${epicId}`);
-                    
-                    parent.insertBefore(document.createTextNode(parts[0]), node);
-                    parent.insertBefore(button, node);
-                    if (parts.length > 1 && parts[1].length > 0) {
-                         parent.insertBefore(document.createTextNode(parts[1]), node);
-                    }
-                    parent.removeChild(node); // Remove the original combined text node
-                }
-            }
+            });
         });
 
         console.log('Registering Epic Anchor Editor Extension');
@@ -199,62 +230,43 @@ function insertEpicAnchor(app: App, editor: Editor) {
     }).open();
 }
 
-// --- Popover Logic ---
-let currentEpicPopover: HTMLElement | null = null;
-let popoverDocumentClickHandler: ((event: MouseEvent) => void) | null = null;
+// --- In-Note Epic View Logic ---
 
-function closeCurrentEpicPopover() {
-    if (currentEpicPopover) {
-        currentEpicPopover.remove();
-        currentEpicPopover = null;
-    }
-    if (popoverDocumentClickHandler) {
-        document.removeEventListener('click', popoverDocumentClickHandler);
-        popoverDocumentClickHandler = null;
-    }
-}
-
-function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin: ADOPlugin) {
-    closeCurrentEpicPopover(); // Close any existing popover
-
-    const popover = document.createElement('div');
-    popover.classList.add('epic-details-popover');
-    popover.style.position = 'absolute';
-    popover.style.border = '1px solid var(--background-modifier-border)';
-    popover.style.backgroundColor = 'var(--background-secondary)';
-    popover.style.padding = '10px';
-    popover.style.borderRadius = '5px';
-    popover.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
-    popover.style.zIndex = '1000'; // Ensure it's on top
-    popover.style.maxWidth = '500px'; // Adjusted for tabs
-    popover.style.minWidth = '350px';
-    popover.style.overflowY = 'auto';
-    popover.style.maxHeight = '450px'; // Adjusted for tabs
-
+/**
+ * Builds the HTML content for an Epic's details, designed to be embedded or used in a modal.
+ * @param epic The Epic data.
+ * @param features An array of child Features.
+ * @param plugin The ADOPlugin instance.
+ * @param forModal Optional flag, true if rendering for a modal (might affect some styling or links).
+ * @returns An object containing the HTML string and an onRender callback for attaching event listeners.
+ */
+function buildEpicInnerHtml(
+    epic: Epic,
+    features: Feature[],
+    plugin: ADOPlugin,
+    forModal: boolean = false
+): { html: string, onRender?: (contentEl: HTMLElement) => void } {
     const fields = epic.fields;
-    const title = fields['System.Title'] || 'N/A';
-    const state = fields['System.State'] || 'N/A';
+    const epicTitle = fields['System.Title'] || 'N/A';
+    const epicState = fields['System.State'] || 'N/A';
     const descriptionContent = fields['System.Description'] || 'No description available.';
-    
+
     // --- Contacts Tab Content ---
     let contactsHtml = '<table>';
     const contactFields = [
         { label: 'Assigned To', fieldName: 'System.AssignedTo' },
         { label: 'Created By', fieldName: 'System.CreatedBy' },
         { label: 'Changed By', fieldName: 'System.ChangedBy' },
-        { label: 'Epic Owner', fieldName: 'Custom.EnterpriseOneEpicOwner' }, // REMINDER: Update if actual field name is different
+        { label: 'Epic Owner', fieldName: 'Custom.EnterpriseOneEpicOwner' },
         { label: 'Solution Architect', fieldName: 'Custom.SolutionArchitect' },
         { label: 'CTX Commerce PM', fieldName: 'Custom.CTXCommerceDomainPM' },
         { label: 'CTX Web Acq. PM', fieldName: 'Custom.CTXWebAcquisitionsPM' }
-        // Add more contact roles here with their labels and actual ADO field names
     ];
-
     contactFields.forEach(cf => {
         const identity = fields[cf.fieldName] as import('./types/index.js').AdoIdentity | undefined;
         if (identity && identity.displayName) {
             contactsHtml += `<tr><td style="padding-right: 10px;"><strong>${cf.label}:</strong></td><td>${identity.displayName}`;
             if (identity.uniqueName) {
-                // Make uniqueName a link to MS Teams chat
                 const teamsLink = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(identity.uniqueName)}`;
                 contactsHtml += ` <span style="color: var(--text-muted); font-size: 0.9em;">(<a href="${teamsLink}" target="_blank" rel="noopener noreferrer" title="Chat on Teams with ${identity.displayName} (${identity.uniqueName})">${identity.uniqueName}</a>)</span>`;
             }
@@ -265,251 +277,205 @@ function createAndShowEpicPopover(targetButton: HTMLElement, epic: Epic, plugin:
     });
     contactsHtml += '</table>';
     const contactsContent = contactsHtml;
-    // --- End Contacts Tab Content ---
 
-    // Placeholder: Replace 'Custom.ReadinessFieldName' with the actual ADO field name.
+    // --- Readiness Tab Content ---
     const readinessContent = fields['Custom.ReadinessFieldName'] || 'Readiness information not available. Configure field name.';
-    const featuresInitialContent = 'Loading features...';
+    
+    // --- Features Tab Content (placeholder, will be filled by onRender) ---
+    const featuresInitialContent = 'Loading features...'; // This will be replaced by the actual feature list logic
 
-    // Header
-    const header = document.createElement('h4');
-    header.style.marginTop = '0px';
-    header.style.marginBottom = '10px';
-    header.textContent = `Epic #${epic.id}: ${title}`;
-    popover.appendChild(header);
+    // --- Main HTML Structure ---
+    let html = `<div class="ado-epic-details-content">`; // Main content wrapper
 
+    // Header (Epic Title and State) - No longer part of the tab system, but as a general header for the content
+    // If not for modal, the main title is handled by the clickable header in the document.
+    // For modal, we might want a title.
+    if (forModal) {
+        html += `<h4 style="margin-top:0; margin-bottom:10px;">Epic #${epic.id}: ${epicTitle} [${epicState}]</h4>`;
+    }
+    
     // Tab container
-    const tabContainer = document.createElement('div');
-    tabContainer.style.display = 'flex';
-    tabContainer.style.marginBottom = '10px';
-    tabContainer.style.borderBottom = '1px solid var(--background-modifier-border)';
+    html += `<div class="ado-epic-tabs" style="display: flex; margin-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border);">`;
+    const tabsData = [
+        { id: 'description', name: 'Description' },
+        { id: 'contacts', name: 'Contacts' },
+        { id: 'features', name: 'Features' },
+        { id: 'readiness', name: 'Readiness' }
+    ];
+    tabsData.forEach((tabInfo, index) => {
+        html += `<button class="ado-epic-tab-button" data-tab-id="tab-pane-${epic.id}-${tabInfo.id}" style="padding: 8px 12px; border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; margin-right: 5px; ${index === 0 ? 'border-bottom-color: var(--interactive-accent); font-weight: bold;' : ''}">${tabInfo.name}</button>`;
+    });
+    html += `</div>`;
 
     // Tab content container
-    const tabContentContainer = document.createElement('div');
-    tabContentContainer.style.minHeight = '100px'; // Give some base height for content
+    html += `<div class="ado-epic-tab-panes" style="min-height: 100px;">`;
+    // Description Pane
+    html += `<div id="tab-pane-${epic.id}-description" class="ado-epic-tab-pane" style="padding: 5px;">${descriptionContent}</div>`;
+    // Contacts Pane
+    html += `<div id="tab-pane-${epic.id}-contacts" class="ado-epic-tab-pane" style="padding: 5px; display: none;">${contactsContent}</div>`;
+    // Features Pane (initially empty or with loader, content built by onRender)
+    html += `<div id="tab-pane-${epic.id}-features" class="ado-epic-tab-pane" style="padding: 5px; display: none;">${featuresInitialContent}</div>`;
+    // Readiness Pane
+    html += `<div id="tab-pane-${epic.id}-readiness" class="ado-epic-tab-pane" style="padding: 5px; display: none;">${readinessContent}</div>`;
+    html += `</div>`; // end ado-epic-tab-panes
 
-    const tabs = [
-        { id: 'description', name: 'Description', content: descriptionContent },
-        { id: 'contacts', name: 'Contacts', content: contactsContent },
-        { id: 'features', name: 'Features', content: featuresInitialContent },
-        { id: 'readiness', name: 'Readiness', content: readinessContent }
-    ];
+    // General Info (Created Date, Updated Date)
+    html += `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); font-size: 0.9em;">`;
+    html += `<strong>State:</strong> ${epicState}<br>`; // Duplicates state if modal title is also shown, consider placement
+    html += `<strong>Created:</strong> ${fields['System.CreatedDate'] ? new Date(fields['System.CreatedDate']).toLocaleDateString() : 'N/A'}<br>`;
+    html += `<strong>Updated:</strong> ${fields['System.ChangedDate'] ? new Date(fields['System.ChangedDate']).toLocaleDateString() : 'N/A'}`;
+    html += `</div>`;
 
-    tabs.forEach((tabInfo, index) => {
-        const tabButton = document.createElement('button');
-        tabButton.textContent = tabInfo.name;
-        tabButton.style.padding = '8px 12px';
-        tabButton.style.border = 'none';
-        tabButton.style.background = 'transparent';
-        tabButton.style.cursor = 'pointer';
-        tabButton.style.borderBottom = '2px solid transparent';
-        tabButton.style.marginRight = '5px';
-        tabButton.dataset.tabId = tabInfo.id;
-
-        const tabPane = document.createElement('div');
-        tabPane.id = `tab-pane-${tabInfo.id}`;
-        tabPane.classList.add('epic-popover-tab-pane');
-        tabPane.style.padding = '5px';
-        
-        // ADO Description is often HTML. Set innerHTML for it.
-        // For other custom fields, they might be plain text or also HTML.
-        // Using innerHTML for all for now, but sanitize if content is untrusted.
-        tabPane.innerHTML = tabInfo.content;
-
-        if (index !== 0) {
-            tabPane.style.display = 'none';
-        } else {
-            tabButton.style.borderBottomColor = 'var(--interactive-accent)';
-            tabButton.style.fontWeight = 'bold';
-        }
-
-        tabButton.onclick = () => {
-            tabContainer.querySelectorAll('button').forEach(btn => {
-                btn.style.borderBottomColor = 'transparent';
-                btn.style.fontWeight = 'normal';
-            });
-            popover.querySelectorAll('.epic-popover-tab-pane').forEach(pane => {
-                (pane as HTMLElement).style.display = 'none';
-            });
-
-            tabButton.style.borderBottomColor = 'var(--interactive-accent)';
-            tabButton.style.fontWeight = 'bold';
-            const activePane = popover.querySelector(`#tab-pane-${tabInfo.id}`) as HTMLElement;
-            if (activePane) {
-                activePane.style.display = 'block';
-            }
-        };
-
-        tabContainer.appendChild(tabButton);
-        tabContentContainer.appendChild(tabPane);
-    });
-
-    popover.appendChild(tabContainer);
-    popover.appendChild(tabContentContainer);
-
-    // Asynchronously load features for the "Features" tab
-    const featuresPane = popover.querySelector('#tab-pane-features') as HTMLElement;
-    if (featuresPane) {
-        plugin.featuresManager.fetchFeaturesByParentId(epic.id)
-            .then(features => {
-                if (!features || features.length === 0) {
-                    featuresPane.innerHTML = 'No features found for this epic.';
-                    return;
-                }
-                let featuresHtml = '<ul style="list-style: none; padding-left: 0;">';
-                const orgUrl = plugin.settings?.organizationUrl;
-                const projectName = plugin.settings?.projectName;
-
-                features.forEach((feature, index) => {
-                    const featureTitle = feature.fields['System.Title'] || 'Untitled Feature';
-                    const featureState = feature.fields['System.State'] || 'Unknown State';
-                    const featureDescription = feature.fields['System.Description'] || 'No description available.';
-                    const featureId = feature.id; // Store for use in element IDs
-
-                    // Header part of the feature item (clickable)
-                    let featureHeaderHtml = `<div class="feature-header" data-feature-index="${index}" style="cursor: pointer; padding: 5px; border-bottom: 1px solid var(--background-modifier-border-hover);">`;
-                    featureHeaderHtml += `<strong>#${featureId}</strong>: ${featureTitle} [${featureState}]`;
-                    
-                    // Add ADO link to the header
-                    if (orgUrl && projectName) {
-                        const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
-                        const featureUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${featureId}`;
-                        featureHeaderHtml += ` <a href="${featureUrl}" target="_blank" rel="noopener noreferrer" title="Open Feature #${featureId} in ADO" style="text-decoration: none; color: var(--interactive-accent); font-size: 0.85em;">(Open in ADO)</a>`;
-                    }
-                    featureHeaderHtml += `</div>`;
-
-                    // Content part of the feature item (collapsible)
-                    // Ensure IDs are unique if multiple popovers could exist, though current logic closes old ones.
-                    const contentId = `feature-content-${epic.id}-${featureId}`;
-                    let featureContentHtml = `<div id="${contentId}" class="feature-content" style="display: none; padding: 10px; margin-left: 15px; border-left: 2px solid var(--background-modifier-border); background-color: var(--background-primary-alt);">`;
-                    // ADO descriptions are HTML, so use innerHTML
-                    featureContentHtml += `<div>${featureDescription}</div>`;
-                    featureContentHtml += `</div>`;
-                    
-                    featuresHtml += `<li style="margin-bottom: 2px;">${featureHeaderHtml}${featureContentHtml}</li>`;
-                });
-                featuresHtml += '</ul>';
-                featuresPane.innerHTML = featuresHtml;
-
-                // Add click listeners to feature headers to toggle content visibility
-                featuresPane.querySelectorAll('.feature-header').forEach(headerElement => {
-                    headerElement.addEventListener('click', (event) => {
-                        // Prevent ADO link click from also triggering collapse/expand if on the link itself
-                        if ((event.target as HTMLElement).tagName === 'A') {
-                            return;
-                        }
-                        const featureIndex = headerElement.getAttribute('data-feature-index');
-                        if (featureIndex === null) return;
-                        
-                        const clickedFeature = features[parseInt(featureIndex, 10)];
-                        const contentElementId = `feature-content-${epic.id}-${clickedFeature.id}`;
-                        const contentElement = featuresPane.querySelector(`#${contentElementId}`) as HTMLElement | null;
-
-                        if (contentElement) {
-                            const isVisible = contentElement.style.display !== 'none';
-                            contentElement.style.display = isVisible ? 'none' : 'block';
-                        }
-                    });
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching features for popover:', error);
-                featuresPane.innerHTML = 'Error loading features. See console for details.';
-                new Notice('Failed to load features for epic. See console for details.');
-            });
-    }
-    
-    const generalInfoContainer = document.createElement('div');
-    generalInfoContainer.style.marginTop = '10px';
-    generalInfoContainer.style.paddingTop = '10px';
-    generalInfoContainer.style.borderTop = '1px solid var(--background-modifier-border)';
-    generalInfoContainer.style.fontSize = '0.9em';
-    
-    let generalInfoHtml = `<strong>State:</strong> ${state}<br>`;
-    generalInfoHtml += `<strong>Created:</strong> ${fields['System.CreatedDate'] ? new Date(fields['System.CreatedDate']).toLocaleDateString() : 'N/A'}<br>`;
-    generalInfoHtml += `<strong>Updated:</strong> ${fields['System.ChangedDate'] ? new Date(fields['System.ChangedDate']).toLocaleDateString() : 'N/A'}`;
-    generalInfoContainer.innerHTML = generalInfoHtml;
-    popover.appendChild(generalInfoContainer);
-
-    const openInAdoButton = document.createElement('button');
-    openInAdoButton.textContent = 'Open in ADO';
-    openInAdoButton.style.marginTop = '15px';
-    openInAdoButton.style.padding = '5px 10px';
-    openInAdoButton.onclick = () => {
-        const orgUrl = plugin.settings?.organizationUrl;
-        const projectName = plugin.settings?.projectName;
-        if (!orgUrl) {
-            new Notice('Azure DevOps Organization URL is not set.');
-            return;
-        }
-        if (!projectName) {
-            new Notice('Azure DevOps Project Name is not set.');
-            return;
-        }
+    // "Open in ADO" Button
+    const orgUrl = plugin.settings?.organizationUrl;
+    const projectName = plugin.settings?.projectName;
+    if (orgUrl && projectName) {
         const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
-        // Construct the full URL including organization and project
-        window.open(`${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${epic.id}`, '_blank');
-        closeCurrentEpicPopover();
-    };
-    popover.appendChild(openInAdoButton);
-
-    document.body.appendChild(popover);
-    currentEpicPopover = popover;
-
-    // Position popover near the button
-    const rect = targetButton.getBoundingClientRect();
-    popover.style.top = `${rect.bottom + window.scrollY + 5}px`;
-    popover.style.left = `${rect.left + window.scrollX}px`;
-
-    // Adjust if it goes off-screen
-    const popoverRect = popover.getBoundingClientRect();
-    if (popoverRect.right > window.innerWidth - 10) {
-        popover.style.left = `${window.innerWidth - popoverRect.width - 10 + window.scrollX}px`;
+        const epicAdoUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${epic.id}`;
+        html += `<div style="margin-top:15px;"><a href="${epicAdoUrl}" class="external-link" target="_blank" rel="noopener noreferrer"><button style="padding:5px 10px;">Open Epic #${epic.id} in ADO</button></a></div>`;
     }
-    if (popoverRect.left < 10) {
-        popover.style.left = `${10 + window.scrollX}px`;
-    }
-     if (popoverRect.bottom > window.innerHeight -10) {
-        popover.style.top = `${rect.top + window.scrollY - popoverRect.height - 5}px`; // Show above if not enough space below
-    }
+    html += `</div>`; // end ado-epic-details-content
 
+    // onRender function to attach event listeners
+    const onRender = (contentEl: HTMLElement) => {
+        // Tab switching logic
+        const tabButtons = contentEl.querySelectorAll('.ado-epic-tab-button');
+        const tabPanes = contentEl.querySelectorAll('.ado-epic-tab-pane');
 
-    // Click outside to close
-    popoverDocumentClickHandler = (event: MouseEvent) => {
-        if (currentEpicPopover && !currentEpicPopover.contains(event.target as Node) && event.target !== targetButton) {
-            closeCurrentEpicPopover();
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => {
+                    (btn as HTMLElement).style.borderBottomColor = 'transparent';
+                    (btn as HTMLElement).style.fontWeight = 'normal';
+                });
+                tabPanes.forEach(pane => {
+                    (pane as HTMLElement).style.display = 'none';
+                });
+
+                (button as HTMLElement).style.borderBottomColor = 'var(--interactive-accent)';
+                (button as HTMLElement).style.fontWeight = 'bold';
+                const targetPaneId = button.getAttribute('data-tab-id');
+                if (targetPaneId) {
+                    const activePane = contentEl.querySelector(`#${targetPaneId}`) as HTMLElement;
+                    if (activePane) activePane.style.display = 'block';
+                }
+            });
+        });
+        
+        // Features tab dynamic content loading and rendering
+        const featuresPane = contentEl.querySelector(`#tab-pane-${epic.id}-features`) as HTMLElement;
+        if (featuresPane) {
+            // Check if features were passed directly (e.g. if pre-fetched)
+            // For now, always re-fetch or assume features are passed if available
+            // This part is simplified; in a real scenario, you might pass pre-fetched features
+            // or rely on the `features` argument passed to `buildEpicInnerHtml`.
+
+            if (features && features.length > 0) {
+                renderFeatures(featuresPane, features, epic, plugin);
+            } else if (features) { // Empty array means no features
+                 featuresPane.innerHTML = 'No features found for this epic.';
+            } else { // features is undefined, means we need to fetch
+                plugin.featuresManager.fetchFeaturesByParentId(epic.id)
+                    .then(fetchedFeatures => {
+                        renderFeatures(featuresPane, fetchedFeatures, epic, plugin);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching features for inline view:', error);
+                        featuresPane.innerHTML = 'Error loading features. See console for details.';
+                    });
+            }
         }
     };
-    // Use setTimeout to allow the current click event (that opened the popover) to propagate
-    setTimeout(() => {
-        if (popoverDocumentClickHandler) { // Check if it hasn't been cleared by another rapid click
-            document.addEventListener('click', popoverDocumentClickHandler);
+    
+    // Helper function to render features (used by onRender)
+    function renderFeatures(pane: HTMLElement, featuresToRender: Feature[], parentEpic: Epic, pluginInstance: ADOPlugin) {
+        if (!featuresToRender || featuresToRender.length === 0) {
+            pane.innerHTML = 'No features found for this epic.';
+            return;
         }
-    }, 0);
+        let featuresHtml = '<ul style="list-style: none; padding-left: 0;">';
+        const orgUrl = pluginInstance.settings?.organizationUrl;
+        const projectName = pluginInstance.settings?.projectName;
+
+        featuresToRender.forEach((feature, index) => {
+            const featureTitle = feature.fields['System.Title'] || 'Untitled Feature';
+            const featureState = feature.fields['System.State'] || 'Unknown State';
+            const featureDescription = feature.fields['System.Description'] || 'No description available.';
+            const featureId = feature.id;
+
+            let featureHeaderHtml = `<div class="feature-header" data-feature-id="${featureId}" style="cursor: pointer; padding: 5px; border-bottom: 1px solid var(--background-modifier-border-hover);">`;
+            featureHeaderHtml += `<strong>#${featureId}</strong>: ${featureTitle} [${featureState}]`;
+            if (orgUrl && projectName) {
+                const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
+                const featureUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${featureId}`;
+                featureHeaderHtml += ` <a href="${featureUrl}" target="_blank" rel="noopener noreferrer" title="Open Feature #${featureId} in ADO" style="text-decoration: none; color: var(--interactive-accent); font-size: 0.85em;">(Open in ADO)</a>`;
+            }
+            featureHeaderHtml += `</div>`;
+
+            const contentId = `feature-content-${parentEpic.id}-${featureId}`;
+            let featureContentHtml = `<div id="${contentId}" class="feature-content" style="display: none; padding: 10px; margin-left: 15px; border-left: 2px solid var(--background-modifier-border); background-color: var(--background-primary-alt);">`;
+            featureContentHtml += `<div>${featureDescription}</div></div>`;
+            
+            featuresHtml += `<li style="margin-bottom: 2px;">${featureHeaderHtml}${featureContentHtml}</li>`;
+        });
+        featuresHtml += '</ul>';
+        pane.innerHTML = featuresHtml;
+
+        // Add click listeners for feature expansion
+        pane.querySelectorAll('.feature-header').forEach(headerElement => {
+            headerElement.addEventListener('click', (event) => {
+                if ((event.target as HTMLElement).tagName === 'A') return;
+                const clickedFeatureId = headerElement.getAttribute('data-feature-id');
+                const contentElement = pane.querySelector(`#feature-content-${parentEpic.id}-${clickedFeatureId}`) as HTMLElement | null;
+                if (contentElement) {
+                    contentElement.style.display = contentElement.style.display === 'none' ? 'block' : 'none';
+                }
+            });
+        });
+    }
+
+    return { html, onRender };
+}
+
+
+// --- Epic Modal Class (for editor interaction) ---
+class EpicDetailModal extends Modal {
+    constructor(app: App, private epic: Epic, private features: Feature[], private plugin: ADOPlugin) {
+        super(app);
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty(); // Clear previous content
+        contentEl.classList.add('ado-epic-modal-content');
+        
+        const { html, onRender } = buildEpicInnerHtml(this.epic, this.features, this.plugin, true);
+        contentEl.innerHTML = html;
+        if (onRender) {
+            onRender(contentEl);
+        }
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
 }
 
 
 // CodeMirror 6 ViewPlugin for rendering Epic Anchors as buttons in Edit Mode
+// Now, this button will open a Modal instead of a popover.
 
 class EpicAnchorButtonWidget extends WidgetType {
-    constructor(readonly epicId: string, readonly plugin: ADOPlugin) {
+    constructor(readonly epicId: string, readonly plugin: ADOPlugin, readonly view: EditorView) { // Added view
         super();
     }
 
-    toDOM(view: EditorView): HTMLElement {
+    toDOM(): HTMLElement { // Removed view parameter here, use this.view
         const button = document.createElement('button');
-        button.classList.add('epic-anchor-button-editor'); // Different class for editor if needed
+        button.classList.add('epic-anchor-button-editor');
         button.textContent = `Epic #${this.epicId}`;
         button.style.cursor = 'pointer';
-        // Add any other styling as needed, e.g., from your postprocessor
-        // button.style.backgroundColor = 'var(--interactive-accent)';
-        // button.style.color = 'var(--text-on-accent)';
-        // button.style.border = 'none';
-        // button.style.borderRadius = '3px';
-        // button.style.padding = '1px 6px';
-        // button.style.fontSize = '0.9em';
-        // button.style.margin = '0 2px';
-
 
         button.onclick = async (event) => {
             event.preventDefault();
@@ -519,25 +485,19 @@ class EpicAnchorButtonWidget extends WidgetType {
             button.disabled = true;
 
             try {
-                if (!this.plugin.settings?.organizationUrl) {
-                    new Notice('Azure DevOps Organization URL is not set in plugin settings.');
-                    button.textContent = originalButtonText;
-                    button.disabled = false;
+                if (!this.plugin.settings?.organizationUrl || !this.plugin.settings?.pat) {
+                    new Notice('Azure DevOps connection details are not set in plugin settings.');
                     return;
                 }
-                if (!this.plugin.settings?.pat) {
-                    new Notice('Azure DevOps PAT is not set in plugin settings.');
-                    button.textContent = originalButtonText;
-                    button.disabled = false;
-                    return;
-                }
-                // Ensure API client is configured with latest settings
                 this.plugin.adoApi.setBaseUrl(this.plugin.settings.organizationUrl);
                 this.plugin.adoApi.setPersonalAccessToken(this.plugin.settings.pat);
 
                 const epicDetails = await this.plugin.epicsManager.fetchEpicById(this.epicId);
-                console.log(`Editor Epic Anchor Button - Fetched epic details for #${this.epicId}:`, epicDetails);
-                createAndShowEpicPopover(button, epicDetails, this.plugin);
+                // Fetch features before opening modal
+                const features = await this.plugin.featuresManager.fetchFeaturesByParentId(epicDetails.id);
+                
+                new EpicDetailModal(this.plugin.app, epicDetails, features, this.plugin).open();
+
             } catch (error) {
                 console.error(`Editor Epic Anchor Button - Error fetching epic #${this.epicId}:`, error);
                 new Notice(`Failed to fetch Epic #${this.epicId}. See console for details.`);
@@ -554,10 +514,10 @@ class EpicAnchorButtonWidget extends WidgetType {
     }
 
     ignoreEvent(event: Event): boolean {
-        // Handle click events, ignore others for widget interaction
         return !(event instanceof MouseEvent && event.type === "click");
     }
 }
+
 
 function epicAnchorDecorations(view: EditorView, plugin: ADOPlugin) {
     const builder = new RangeSetBuilder<Decoration>();

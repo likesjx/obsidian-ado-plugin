@@ -1,0 +1,268 @@
+/* Obsidian ADO Plugin - Glassmorphism/Raycast Inspired Styles */
+
+/* Main Inline Epic View Container */
+.ado-epic-view-container {
+    /* Glassmorphism Background */
+    background-color: rgba(var(--mono-rgb-100), 0.15); /* Very subtle base, adjust alpha for more/less glass */
+    -webkit-backdrop-filter: blur(12px); /* Safari */
+    backdrop-filter: blur(12px); /* Standard */
+    
+    border: 1px solid rgba(var(--mono-rgb-100), 0.2); /* Softer border */
+    border-radius: 10px; /* More pronounced rounding */
+    
+    width: 100%;
+    margin-bottom: 1.5em; /* More spacing */
+    box-sizing: border-box;
+    box-shadow: 0 4px 15px rgba(var(--mono-rgb-0), 0.05), 0 0 0 1px rgba(var(--mono-rgb-100),0.05); /* Subtle shadow */
+    overflow: hidden;
+    color: var(--text-normal); /* Ensure text color is theme-aware */
+}
+
+/* Header for the Inline Epic View */
+.ado-epic-header {
+    padding: 12px 15px;
+    cursor: pointer;
+    /* Header can have a slightly different tint or be part of the same glass pane */
+    /* background-color: rgba(var(--mono-rgb-100), 0.1); /* Slightly different tint if desired */
+    border-bottom: 1px solid rgba(var(--mono-rgb-100), 0.15); /* Softer separator */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ado-epic-header strong {
+    font-weight: 600; /* Slightly bolder for Raycast feel */
+    color: var(--text-normal);
+}
+
+.ado-epic-title-placeholder,
+.ado-epic-state-placeholder {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-left: 0.5ch;
+}
+
+.ado-epic-toggle-indicator {
+    font-weight: normal;
+    color: var(--text-faint);
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+
+/* Content Area for Inline Epic View */
+.ado-epic-content {
+    padding: 12px 15px;
+    /* No separate background, part of the same glass pane */
+}
+
+/* Tab System */
+.ado-epic-tabs {
+    display: flex;
+    margin-bottom: 12px;
+    padding-left: 0;
+    border-bottom: 1px solid rgba(var(--mono-rgb-100), 0.1); /* Very subtle separator */
+}
+
+.ado-epic-tab-button {
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-right: 8px; /* Slightly more spacing */
+    color: var(--text-muted);
+    font-weight: 500; /* Medium weight for tabs */
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.ado-epic-tab-button:hover {
+    color: var(--text-normal);
+}
+
+/* Active tab - using a more Raycast-like underline/highlight */
+.ado-epic-tab-button[style*="font-weight: bold;"] {
+    color: var(--text-accent); /* Or var(--text-normal) for a less colorful active state */
+    border-bottom-color: var(--text-accent-hover) !important;
+    font-weight: 600 !important;
+}
+
+.ado-epic-tab-panes {
+    min-height: 100px;
+}
+
+.ado-epic-tab-pane {
+    padding: 8px 0; /* More vertical padding, less horizontal as content might have its own */
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Features List within Tabs */
+#tab-pane-features ul, 
+.ado-epic-modal-content #tab-pane-features ul {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 0;
+}
+
+#tab-pane-features li,
+.ado-epic-modal-content #tab-pane-features li {
+    margin-bottom: 8px;
+    /* Individual feature items can also have a subtle glass effect or just a clean look */
+    background-color: rgba(var(--mono-rgb-100), 0.08); /* Slightly different tint for items */
+    border-radius: 6px; /* Consistent rounding */
+    border: 1px solid rgba(var(--mono-rgb-100), 0.1);
+    overflow: hidden;
+}
+
+.feature-header {
+    cursor: pointer;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* background-color: rgba(var(--mono-rgb-100), 0.05); /* Header distinct from content */
+    border-bottom: 1px solid transparent; /* Initially no border */
+    transition: background-color 0.2s ease;
+}
+
+.feature-header:hover {
+    background-color: rgba(var(--mono-rgb-100), 0.1);
+}
+
+.feature-header strong {
+    font-weight: 500;
+    color: var(--text-normal);
+}
+.feature-header span:not(:first-child) {
+     color: var(--text-muted);
+     font-size: 0.9em;
+}
+.feature-header a { /* ADO link */
+    font-size: 0.85em !important;
+    color: var(--text-faint) !important;
+}
+.feature-header a:hover {
+    color: var(--text-accent) !important;
+}
+
+
+.feature-content {
+    padding: 10px 12px;
+    background-color: transparent; /* Content is part of the item's glass */
+    font-size: 0.95em;
+    border-top: 1px solid rgba(var(--mono-rgb-100), 0.1); /* Separator from header when expanded */
+    color: var(--text-muted);
+}
+.feature-content div { /* The actual description div */
+    line-height: 1.6;
+}
+
+
+/* Modal Specific Styling - Aim for consistency with inline view */
+.ado-epic-modal-content {
+    padding: 0; /* Modal itself might have padding, content fills it */
+    /* Apply glass effect to the modal's content area if possible, or the modal itself */
+}
+/* If styling the modal directly (requires targeting Obsidian's modal classes, can be tricky):
+.modal.ado-epic-modal .modal-content {
+    background-color: rgba(var(--mono-rgb-80), 0.5); 
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.2);
+    box-shadow: 0 8px 32px 0 rgba(var(--mono-rgb-0), 0.1);
+}
+*/
+
+.ado-epic-modal-content h4 { /* Title within our custom modal content */
+    padding: 15px 15px 10px 15px;
+    margin:0;
+    border-bottom: 1px solid rgba(var(--mono-rgb-100), 0.15);
+    font-weight: 600;
+}
+/* The rest of the modal content (tabs, etc.) will inherit from .ado-epic-details-content */
+/* which is now styled by .ado-epic-view-container if we reuse classes, or needs specific modal styling */
+
+
+/* General ADO Button Styling (e.g., Open in ADO) */
+.ado-epic-details-content button,
+.ado-epic-modal-content button {
+    /* Minimalist button style */
+    background-color: rgba(var(--mono-rgb-100), 0.1);
+    border: 1px solid rgba(var(--mono-rgb-100), 0.2);
+    color: var(--text-normal);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.ado-epic-details-content button:hover,
+.ado-epic-modal-content button:hover {
+    background-color: rgba(var(--mono-rgb-100), 0.15);
+    border-color: rgba(var(--mono-rgb-100), 0.3);
+}
+
+
+/* Editor Mode Button - Keep it simple and clear */
+.epic-anchor-button-editor {
+    padding: 2px 6px;
+    font-size: 0.9em;
+    background-color: var(--interactive-accent); /* Keep using accent for editor button for visibility */
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px; /* Slightly more rounded */
+    cursor: pointer;
+    margin: 0 2px;
+    transition: background-color 0.2s ease;
+}
+
+.epic-anchor-button-editor:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.epic-anchor-button-editor:disabled {
+    background-color: var(--background-modifier-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Utility for error text */
+.text-error {
+    color: var(--text-error) !important;
+}
+
+/* Ensure Obsidian variables are available for RGB conversion if not already defined */
+:root {
+    /* These are common Obsidian base colors. Adjust if your theme uses different ones. */
+    /* For a light theme: */
+    --mono-rgb-0: 0, 0, 0;       /* Typically black */
+    --mono-rgb-100: 255, 255, 255; /* Typically white */
+    /* For a dark theme, these might be swapped or different. 
+       The key is to pick a base for transparency that works with both.
+       Using --mono-rgb-100 for the glass base color and --mono-rgb-0 for shadows
+       is a common pattern that can adapt.
+       Alternatively, use more specific theme variables if available and reliable.
+       For instance, --background-primary-rgb might exist in some themes.
+    */
+
+    /* If your theme provides RGB versions of background colors, use them! e.g.:
+    --background-primary-rgb: var(--your-theme-primary-rgb, 255,255,255); 
+    --text-normal-rgb: var(--your-theme-text-normal-rgb, 0,0,0);
+    */
+}
+
+/* Example for dark theme adaptation if needed (can be more complex) */
+.theme-dark {
+    /* .ado-epic-view-container {
+        background-color: rgba(var(--mono-rgb-0), 0.2);
+        border: 1px solid rgba(var(--mono-rgb-0), 0.3);
+    } */
+    /* Further dark theme specific tweaks can go here */
+}

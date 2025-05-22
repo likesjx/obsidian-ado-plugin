@@ -48,3 +48,18 @@ export interface Feature {
         [key: string]: any;
     };
 }
+
+export interface WorkItemQueryResult {
+  id: number;
+  title: string;
+  state: string;
+  type: string;
+  adoUrl: string; // Direct URL to the item in ADO
+  fields: { // For direct access if needed
+    'System.Id': number;
+    'System.Title': string;
+    'System.State': string;
+    'System.WorkItemType': string;
+    // other fields if fetched
+  };
+}

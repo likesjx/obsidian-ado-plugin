@@ -43,29 +43,44 @@ export default class ADOPlugin extends Plugin {
             }
         });
 
-        console.log('Registering Epic Anchor Post Processor');
+        // This MarkdownPostProcessor is for rendering ADO anchors in Live Preview / Reading mode.
+        console.log('Registering ADO Anchor Post Processor');
         this.registerMarkdownPostProcessor((element: HTMLElement, context: MarkdownPostProcessorContext) => {
-            // Find code elements that look like our anchors
             const codeElements = element.querySelectorAll('code');
-            codeElements.forEach((codeEl: HTMLElement) => { // Added explicit type
+            codeElements.forEach((codeEl: HTMLElement) => {
                 const anchorText = codeEl.textContent;
-                if (anchorText && anchorText.startsWith('<<#') && anchorText.endsWith('>>')) {
-                    const match = anchorText.match(/<<#(\d+)>>/);
-                    if (match && match[1]) {
-                        const epicId = match[1];
+                if (!anchorText) return;
 
-                        // Check if this anchor's container has already been processed to avoid re-processing
-                        // The actual replacement target (paragraph or the code element itself if inline)
-                        let potentialContainer = codeEl.parentElement;
-                        if (potentialContainer && potentialContainer.classList.contains('ado-epic-view-container')) {
-                            return; // Already processed and replaced
+                const match = anchorText.match(/<<([Q]?#)([^>]+?)>>/);
+
+                if (match) {
+                    const prefix = match[1]; // 'Q#' or '#'
+                    const id = match[2];
+                    const anchorType = (prefix === 'Q#') ? 'query' : 'epic';
+
+                    // Avoid re-processing
+                    if (codeEl.parentElement?.classList.contains('ado-epic-view-container') || 
+                        codeEl.parentElement?.classList.contains('ado-query-placeholder-container') || // New class for query placeholders
+                        codeEl.dataset.adoProcessed === 'true') {
+                        return;
+                    }
+                    // Mark as processed early to prevent issues if other logic re-triggers post-processing
+                    // on the same element before replacement is complete.
+                    codeEl.dataset.adoProcessed = 'true'; 
+
+                    let replacementTarget: Element = codeEl;
+                    if (codeEl.parentElement && codeEl.parentElement.tagName === 'P' && codeEl.parentElement.childNodes.length === 1) {
+                        replacementTarget = codeEl.parentElement;
+                    }
+
+                    if (anchorType === 'epic') {
+                        // Ensure 'id' is a valid number for epics if it was captured by the broader regex
+                        if (!/^\d+$/.test(id)) {
+                            console.warn(`Invalid Epic ID detected: ${id}. Skipping rendering.`);
+                            codeEl.dataset.adoProcessed = 'false'; // Unmark if not valid for epic
+                            return; 
                         }
-                        // If the codeEl itself was replaced, it wouldn't be found again.
-                        // This check is more for cases where the parent paragraph might be re-evaluated.
-
-                        // More robust check: if the codeEl itself has a marker or its direct parent is the container
-                        if (codeEl.dataset.adoProcessed === 'true') return;
-
+                        const epicId = id; // Already validated as digits for epic type
 
                         const container = document.createElement('div');
                         container.classList.add('ado-epic-view-container');
@@ -92,59 +107,103 @@ export default class ADOPlugin extends Plugin {
                         container.appendChild(header);
                         container.appendChild(contentArea);
 
-                        // Determine what to replace.
-                        // If the <code> is the only child of a <p>, replace the <p>.
-                        // Otherwise, replace the <code> itself.
-                        let replacementTarget: Element = codeEl;
-                        if (codeEl.parentElement && codeEl.parentElement.tagName === 'P' && codeEl.parentElement.childNodes.length === 1) {
-                            replacementTarget = codeEl.parentElement;
-                        } else {
-                             // Mark the original code element so we don't reprocess if it's somehow still in DOM during another pass
-                            codeEl.dataset.adoProcessed = 'true';
-                        }
+                        const container = document.createElement('div');
+                        container.classList.add('ado-epic-view-container');
+                        container.style.width = '100%'; 
+                        container.style.marginBottom = '1em';
+                        container.style.border = '1px solid var(--background-modifier-border)';
+                        container.style.borderRadius = '5px';
+                        container.style.boxSizing = 'border-box';
+
+                        const header = document.createElement('div');
+                        header.classList.add('ado-epic-header');
+                        header.style.padding = '10px';
+                        header.style.cursor = 'pointer';
+                        header.style.backgroundColor = 'var(--background-secondary)';
+                        header.style.borderBottom = '1px solid var(--background-modifier-border)';
+                        // Use epicId (which is `id` for epics)
+                        header.innerHTML = `<strong>Epic #${epicId}</strong> <span class="ado-epic-title-placeholder"></span> <span class="ado-epic-state-placeholder"></span> <span class="ado-epic-toggle-indicator" style="float: right; font-weight: normal; color: var(--text-muted);">[-] Collapse</span>`;
+                        
+                        const contentArea = document.createElement('div');
+                        contentArea.classList.add('ado-epic-content');
+                        contentArea.style.display = 'block'; // Default to expanded
+                        contentArea.style.padding = '10px';
+                        contentArea.dataset.loaded = 'false';
+
+                        container.appendChild(header);
+                        container.appendChild(contentArea);
                         
                         replacementTarget.replaceWith(container);
-
-                        // Default to expanded view and load content immediately
-                        contentArea.style.display = 'block';
-                        const toggleIndicatorInitial = header.querySelector('.ado-epic-toggle-indicator') as HTMLElement;
-                        if (toggleIndicatorInitial) toggleIndicatorInitial.textContent = '[-] Collapse';
                         
-                        // Call the new function to load epic content.
-                        // 'this' correctly refers to the ADOPlugin instance here.
                         loadEpicContent(epicId, contentArea, header, this);
 
                         header.onclick = async () => {
                             const isCurrentlyHidden = contentArea.style.display === 'none';
                             const toggleIndicator = header.querySelector('.ado-epic-toggle-indicator') as HTMLElement;
 
-                            if (isCurrentlyHidden) { // Expanding a previously collapsed one
+                            if (isCurrentlyHidden) {
                                 contentArea.style.display = 'block';
                                 if (toggleIndicator) toggleIndicator.textContent = '[-] Collapse';
-                                
-                                // If content wasn't loaded due to an initial error, attempt to load it again.
                                 if (contentArea.dataset.loaded === 'false') {
-                                    // 'this' inside header.onclick refers to the header HTMLElement,
-                                    // so we use 'this.plugin' if loadEpicContent was a method of ADOPlugin,
-                                    // or pass the plugin instance explicitly if it's a standalone function.
-                                    // Since registerMarkdownPostProcessor's callback has `this` as the plugin instance
-                                    // at the time of defining this onclick handler, we can capture it.
-                                    // However, loadEpicContent is now a standalone function, needing `this` (plugin) passed.
-                                    // The `this` from the outer scope of registerMarkdownPostProcessor is the plugin instance.
                                     loadEpicContent(epicId, contentArea, header, this);
                                 }
-                            } else { // Collapsing
+                            } else {
                                 contentArea.style.display = 'none';
                                 if (toggleIndicator) toggleIndicator.textContent = '[+] Expand';
                             }
                         };
+                        // No need for: if (replacementTarget !== codeEl) codeEl.dataset.adoProcessed = 'true';
+                        // because codeEl.dataset.adoProcessed = 'true' was set early.
+
+                    } else if (anchorType === 'query') {
+                        const queryPlaceholderContainer = document.createElement('div');
+                        queryPlaceholderContainer.classList.add('ado-query-placeholder-container');
+
+                        const queryButton = document.createElement('button');
+                        queryButton.classList.add('ado-query-button'); // For styling
+                        queryButton.textContent = `View Query: ${id}`;
+                        queryButton.style.cursor = 'pointer';
+                        // Basic button styling - can be enhanced with CSS later
+                        queryButton.style.padding = '5px 10px';
+                        queryButton.style.border = '1px solid var(--background-modifier-border)';
+                        queryButton.style.borderRadius = '3px';
+                        queryButton.style.backgroundColor = 'var(--interactive-normal)';
+                        
+                        // 'this' inside this callback refers to the ADOPlugin instance.
+                        const pluginInstance = this; 
+                        queryButton.onclick = async () => {
+                            const notice = new Notice(`Loading results for Query: ${id}...`, 0);
+                            try {
+                                // Ensure API is configured before making calls
+                                if (!pluginInstance.settings?.organizationUrl || !pluginInstance.settings?.pat) {
+                                    new Notice('Azure DevOps connection details are not set in plugin settings.');
+                                    return;
+                                }
+                                pluginInstance.adoApi.setBaseUrl(pluginInstance.settings.organizationUrl);
+                                pluginInstance.adoApi.setPersonalAccessToken(pluginInstance.settings.pat);
+                                
+                                // Pass a second argument (e.g., true) to signal fetching comprehensive fields.
+                                const results = await pluginInstance.queriesManager.executeQuery(id, true);
+                                new QueryResultsViewModal(pluginInstance.app, pluginInstance, results, id).open();
+                            } catch (error) {
+                                console.error(`Error executing or displaying query ${id} from post-processor:`, error);
+                                new Notice(`Failed to load results for Query: ${id}. See console for details.`);
+                            } finally {
+                                notice.hide();
+                            }
+                        };
+
+                        queryPlaceholderContainer.appendChild(queryButton);
+                        replacementTarget.replaceWith(queryPlaceholderContainer);
+                        // No need for: if (replacementTarget !== codeEl) codeEl.dataset.adoProcessed = 'true';
+                        // because codeEl.dataset.adoProcessed = 'true' was set early.
                     }
                 }
             });
         });
 
-        console.log('Registering Epic Anchor Editor Extension');
-        this.registerEditorExtension(epicAnchorViewPlugin(this));
+        console.log('Registering ADO Anchor Editor Extension'); // Updated log message
+        this.registerEditorExtension(adoAnchorViewPlugin(this)); // Updated to use renamed plugin
 
         // Register the Execute ADO Query command
         this.addCommand({
@@ -165,7 +224,8 @@ export default class ADOPlugin extends Plugin {
                         this.adoApi.setPersonalAccessToken(this.settings.pat);
                         
                         const results = await this.queriesManager.executeQuery(queryIdOrPath);
-                        new QueryResultsModal(this.app, results, queryIdOrPath).open();
+                        // new QueryResultsModal(this.app, results, queryIdOrPath).open(); // Old list-based modal
+                        new QueryResultsViewModal(this.app, this, results, queryIdOrPath).open(); // New table-based modal
                     } catch (error: any) {
                         console.error(`Error executing query '${queryIdOrPath}':`, error);
                         new Notice(`Failed to execute query: ${error.message || error}`);
@@ -173,6 +233,26 @@ export default class ADOPlugin extends Plugin {
                         loadingNotice.hide(); // Hide the loading notice
                     }
                 }).open();
+            }
+        });
+
+        // Register the Insert ADO Query Anchor command
+        this.addCommand({
+            id: 'insert-ado-query-anchor',
+            name: 'Insert ADO Query Anchor',
+            editorCallback: (editor: Editor, _view: MarkdownView) => { // view is often not needed for simple editor commands
+                const selection = editor.getSelection().trim();
+                if (selection) {
+                    // If something is selected, wrap it as a Query Anchor
+                    editor.replaceSelection(`<<Q#${selection}>>`);
+                } else {
+                    // If nothing is selected, open a modal to ask for the Query ID/Path
+                    new QueryIDModal(this.app, (queryId: string) => {
+                        if (queryId) { // Ensure something was actually entered
+                            editor.replaceSelection(`<<Q#${queryId}>>`);
+                        }
+                    }).open();
+                }
             }
         });
     }
@@ -272,18 +352,68 @@ class EpicNumberModal extends Modal {
     }
 
     submit(value: string) {
+        // For EpicNumberModal, we keep the number validation
+        if (!/^[0-9]+$/.test(value.trim())) {
+            new Notice('Please enter a valid number.');
+            return;
+        }
+        this.close();
+        this.onSubmit(value.trim());
+    }
+}
+
+
+// --- Modal for ADO Query ID Input (for inserting anchors) ---
+class QueryIDModal extends Modal {
+    onSubmit: (queryId: string) => void;
+
+    constructor(app: App, onSubmit: (queryId: string) => void) {
+        super(app);
+        this.onSubmit = onSubmit;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl('h2', { text: 'Enter ADO Query ID or Path' });
+
+        const input = contentEl.createEl('input', { 
+            type: 'text', 
+            placeholder: 'e.g., My Queries/Path or GUID' 
+        });
+        input.style.width = '100%';
+        input.style.marginBottom = '10px';
+        input.focus();
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.submit(input.value);
+            }
+        });
+
+        const submitBtn = contentEl.createEl('button', { text: 'Insert Anchor' });
+        submitBtn.onclick = () => this.submit(input.value);
+    }
+
+    submit(value: string) {
         const trimmedValue = value.trim();
-        if (!trimmedValue) { // Allow any non-empty string (GUID or path)
+        if (!trimmedValue) {
             new Notice('Please enter a Query ID or Path.');
             return;
         }
         this.close();
         this.onSubmit(trimmedValue);
     }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
 }
 
 
-// --- Modal for Query Input ---
+// --- Modal for Query Input (for executing queries) ---
+// Note: This is QueryInputModal, distinct from QueryIDModal
 class QueryInputModal extends Modal {
     onSubmit: (queryIdOrPath: string) => void;
 
@@ -294,7 +424,7 @@ class QueryInputModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: 'Enter Query ID or Path' });
+        contentEl.createEl('h2', { text: 'Enter Query ID or Path to Execute' });
 
         const input = contentEl.createEl('input', { 
             type: 'text', 
@@ -331,39 +461,113 @@ class QueryInputModal extends Modal {
     }
 }
 
-// --- Modal for Displaying Query Results ---
-class QueryResultsModal extends Modal {
-    constructor(app: App, private results: WorkItemQueryResult[], private queryIdOrPath: string) {
+// --- Modal for Displaying Query Results in a Table ---
+class QueryResultsViewModal extends Modal {
+    constructor(app: App, private plugin: ADOPlugin, private results: WorkItemQueryResult[], private queryIdOrPath: string) {
         super(app);
     }
 
     onOpen() {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.classList.add('ado-query-results-modal');
+        contentEl.classList.add('ado-query-results-view-modal'); // Add a distinct class
+        // Increase modal width for better table display
+        this.modalEl.style.width = '80%'; 
+        this.modalEl.style.maxWidth = '1000px';
 
-        contentEl.createEl('h2', { text: `Results for Query: ${this.queryIdOrPath}` });
 
-        if (this.results.length === 0) {
-            contentEl.createEl('p', { text: 'No results found.' });
+        contentEl.createEl('h2', { text: `Query Results: ${this.queryIdOrPath}` });
+
+        if (!this.results || this.results.length === 0) {
+            contentEl.createEl('p', { text: 'No work items found for this query.' });
             return;
         }
 
-        const listEl = contentEl.createEl('ul');
-        listEl.style.listStyle = 'none'; // Remove default bullet points
-        listEl.style.paddingLeft = '0'; // Remove default padding
+        const tableWrapper = contentEl.createDiv({ cls: 'ado-table-wrapper' });
+        tableWrapper.style.overflowX = 'auto';
+        tableWrapper.style.maxHeight = '60vh'; // Make table body scrollable if too long
+        tableWrapper.style.marginTop = '10px';
 
+
+        const table = tableWrapper.createEl('table', { cls: 'ado-query-results-table' });
+        table.style.width = '100%'; // Ensure table uses wrapper width
+        table.style.borderCollapse = 'collapse';
+
+
+        const thead = table.createTHead();
+        const headerRow = thead.createTr();
+        const headers = ['ID', 'Type', 'Title', 'State', 'Assigned To', 'Actions'];
+        headers.forEach(headerText => {
+            const th = headerRow.createEl('th');
+            th.setText(headerText);
+            th.style.border = '1px solid var(--background-modifier-border)';
+            th.style.padding = '8px';
+            th.style.textAlign = 'left';
+            th.style.backgroundColor = 'var(--background-secondary)';
+        });
+
+        const tbody = table.createTBody();
         this.results.forEach(item => {
-            const listItemEl = listEl.createEl('li');
-            listItemEl.style.marginBottom = '8px'; // Add some spacing between items
+            const row = tbody.createTr();
             
-            const linkEl = listItemEl.createEl('a', {
-                href: item.adoUrl,
-                text: `[${item.type}] #${item.id}: ${item.title} (${item.state})`,
-                target: '_blank', // Open in new tab
-                rel: 'noopener noreferrer' // Security best practice
+            [
+                item.id.toString(),
+                item.fields['System.WorkItemType'] || item.type || 'N/A',
+                item.fields['System.Title'] || item.title || 'N/A',
+                item.fields['System.State'] || item.state || 'N/A',
+                item.fields['System.AssignedTo']?.displayName || 'N/A'
+            ].forEach(cellText => {
+                const td = row.createTd();
+                td.setText(cellText);
+                td.style.border = '1px solid var(--background-modifier-border)';
+                td.style.padding = '8px';
+                td.style.verticalAlign = 'top'; // Align content to the top
             });
-            linkEl.style.textDecoration = 'none'; // Optional: remove underline from links
+
+            const actionsCell = row.createTd();
+            actionsCell.style.border = '1px solid var(--background-modifier-border)';
+            actionsCell.style.padding = '8px';
+            actionsCell.style.verticalAlign = 'top';
+
+            actionsCell.createEl('a', {
+                text: 'Open in ADO',
+                href: item.adoUrl,
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                cls: 'ado-action-link' // For potential styling
+            });
+
+            if ((item.fields['System.WorkItemType'] || item.type) === 'Epic') {
+                actionsCell.createEl('br'); // Simple separator
+                const viewEpicBtn = actionsCell.createEl('button', { text: 'View Epic', cls: 'ado-action-button' });
+                // Basic button styling
+                viewEpicBtn.style.marginTop = '5px';
+                viewEpicBtn.style.padding = '3px 6px';
+                viewEpicBtn.style.fontSize = '0.9em';
+
+
+                viewEpicBtn.onclick = async () => {
+                    const loadingNotice = new Notice('Loading Epic details...', 0);
+                    try {
+                        // Ensure API is configured before making calls
+                        if (!this.plugin.settings?.organizationUrl || !this.plugin.settings?.pat) {
+                            new Notice('Azure DevOps connection details are not set in plugin settings.');
+                            return;
+                        }
+                        this.plugin.adoApi.setBaseUrl(this.plugin.settings.organizationUrl);
+                        this.plugin.adoApi.setPersonalAccessToken(this.plugin.settings.pat);
+
+                        const epicDetails = await this.plugin.epicsManager.fetchEpicById(item.id.toString());
+                        const features = await this.plugin.featuresManager.fetchFeaturesByParentId(item.id);
+                        new EpicDetailModal(this.app, epicDetails, features, this.plugin).open();
+                    } catch (err: any) {
+                        new Notice('Failed to load Epic: ' + (err.message || err));
+                        console.error('Failed to load Epic details in QueryResultsViewModal:', err);
+                    } finally {
+                        loadingNotice.hide();
+                    }
+                };
+            }
         });
     }
 
@@ -727,55 +931,84 @@ function buildFeatureInnerHtml(
 }
 
 
-// CodeMirror 6 ViewPlugin for rendering Epic Anchors as buttons in Edit Mode
-// Now, this button will open a Modal instead of a popover.
-
-class EpicAnchorButtonWidget extends WidgetType {
-    constructor(readonly epicId: string, readonly plugin: ADOPlugin, readonly view: EditorView) { // Added view
+// CodeMirror 6 ViewPlugin for rendering ADO Anchors (Epics and Queries) as buttons in Edit Mode.
+class AdoAnchorButtonWidget extends WidgetType {
+    constructor(
+        readonly anchorType: 'epic' | 'query', 
+        readonly id: string, 
+        readonly plugin: ADOPlugin, 
+        readonly view: EditorView
+    ) {
         super();
     }
 
-    toDOM(): HTMLElement { // Removed view parameter here, use this.view
+    toDOM(): HTMLElement {
         const button = document.createElement('button');
-        button.classList.add('epic-anchor-button-editor');
-        button.textContent = `Epic #${this.epicId}`;
+        button.classList.add('ado-anchor-button-editor'); // Generic class
+        button.textContent = this.anchorType === 'epic' ? `Epic #${this.id}` : `Query: ${this.id}`;
         button.style.cursor = 'pointer';
 
         button.onclick = async (event) => {
             event.preventDefault();
-            console.log(`Editor Epic Anchor Button - Clicked Epic #${this.epicId}`);
-            const originalButtonText = button.textContent;
-            button.textContent = 'Loading...';
-            button.disabled = true;
+            
+            if (this.anchorType === 'epic') {
+                console.log(`Editor ADO Anchor Button - Clicked Epic #${this.id}`);
+                const originalButtonText = button.textContent;
+                button.textContent = 'Loading Epic...';
+                button.disabled = true;
 
-            try {
-                if (!this.plugin.settings?.organizationUrl || !this.plugin.settings?.pat) {
-                    new Notice('Azure DevOps connection details are not set in plugin settings.');
-                    return;
+                try {
+                    if (!this.plugin.settings?.organizationUrl || !this.plugin.settings?.pat) {
+                        new Notice('Azure DevOps connection details are not set in plugin settings.');
+                        return;
+                    }
+                    this.plugin.adoApi.setBaseUrl(this.plugin.settings.organizationUrl);
+                    this.plugin.adoApi.setPersonalAccessToken(this.plugin.settings.pat);
+
+                    const epicDetails = await this.plugin.epicsManager.fetchEpicById(this.id);
+                    const features = await this.plugin.featuresManager.fetchFeaturesByParentId(epicDetails.id);
+                    
+                    new EpicDetailModal(this.plugin.app, epicDetails, features, this.plugin).open();
+
+                } catch (error) {
+                    console.error(`Editor ADO Anchor Button - Error fetching epic #${this.id}:`, error);
+                    new Notice(`Failed to fetch Epic #${this.id}. See console for details.`);
+                } finally {
+                    button.textContent = originalButtonText;
+                    button.disabled = false;
                 }
-                this.plugin.adoApi.setBaseUrl(this.plugin.settings.organizationUrl);
-                this.plugin.adoApi.setPersonalAccessToken(this.plugin.settings.pat);
+            } else if (this.anchorType === 'query') {
+                const queryId = this.id;
+                const plugin = this.plugin;
+                const notice = new Notice(`Loading results for Query: ${queryId}...`, 0);
+                try {
+                    // Ensure API is configured before making calls
+                    if (!plugin.settings?.organizationUrl || !plugin.settings?.pat) {
+                        new Notice('Azure DevOps connection details are not set in plugin settings.');
+                        return;
+                    }
+                    plugin.adoApi.setBaseUrl(plugin.settings.organizationUrl);
+                    plugin.adoApi.setPersonalAccessToken(plugin.settings.pat);
 
-                const epicDetails = await this.plugin.epicsManager.fetchEpicById(this.epicId);
-                // Fetch features before opening modal
-                const features = await this.plugin.featuresManager.fetchFeaturesByParentId(epicDetails.id);
-                
-                new EpicDetailModal(this.plugin.app, epicDetails, features, this.plugin).open();
-
-            } catch (error) {
-                console.error(`Editor Epic Anchor Button - Error fetching epic #${this.epicId}:`, error);
-                new Notice(`Failed to fetch Epic #${this.epicId}. See console for details.`);
-            } finally {
-                button.textContent = originalButtonText;
-                button.disabled = false;
+                    // Pass a second argument (e.g., true or a fields array) to signal fetching comprehensive fields.
+                    const results = await plugin.queriesManager.executeQuery(queryId, true); 
+                    new QueryResultsViewModal(plugin.app, plugin, results, queryId).open();
+                } catch (error) {
+                    console.error(`Error executing or displaying query ${queryId} from editor button:`, error);
+                    new Notice(`Failed to load results for Query: ${queryId}. See console for details.`);
+                } finally {
+                    notice.hide();
+                }
             }
         };
         return button;
     }
 
-    eq(other: EpicAnchorButtonWidget): boolean {
-        // Compare all readonly properties for an accurate equality check
-        return other.epicId === this.epicId && other.plugin === this.plugin && other.view === this.view;
+    eq(other: AdoAnchorButtonWidget): boolean {
+        return other.anchorType === this.anchorType && 
+               other.id === this.id && 
+               other.plugin === this.plugin && 
+               other.view === this.view;
     }
 
     ignoreEvent(event: Event): boolean {
@@ -783,10 +1016,14 @@ class EpicAnchorButtonWidget extends WidgetType {
     }
 }
 
-
-function epicAnchorDecorations(view: EditorView, plugin: ADOPlugin) {
+function adoAnchorDecorations(view: EditorView, plugin: ADOPlugin) {
     const builder = new RangeSetBuilder<Decoration>();
-    const anchorRegex = /<<#(\d+)>>/g;
+    // Regex to match <<#ID>> (Epic) or <<Q#QueryString>> (Query)
+    // Group 1: Optional 'Q'
+    // Group 2: '#'
+    // Group 3: The ID (digits for Epic, anything not '>>' for Query)
+    // Simplified: Group 1: 'Q#' or '#', Group 2: ID
+    const anchorRegex = /<<([Q]?#)([^>]+?)>>/g; 
 
     for (const { from, to } of view.visibleRanges) {
         const text = view.state.doc.sliceString(from, to);
@@ -794,15 +1031,19 @@ function epicAnchorDecorations(view: EditorView, plugin: ADOPlugin) {
         while ((match = anchorRegex.exec(text)) !== null) {
             const anchorStart = from + match.index;
             const anchorEnd = anchorStart + match[0].length;
-            const epicId = match[1];
+            
+            const prefix = match[1]; // 'Q#' or '#'
+            const id = match[2];     // The actual ID string
 
-            // console.log(`Editor Epic Anchor - Rendering: ${match[0]} (ID: ${epicId}) at ${anchorStart}-${anchorEnd}`); // Optional
+            const anchorType = prefix === 'Q#' ? 'query' : 'epic';
+            
+            // console.log(`Editor ADO Anchor - Rendering: ${match[0]} (Type: ${anchorType}, ID: ${id}) at ${anchorStart}-${anchorEnd}`);
             builder.add(
                 anchorStart,
                 anchorEnd,
                 Decoration.replace({
-                    widget: new EpicAnchorButtonWidget(epicId, plugin, view),
-                    side: -1 // Prefer placing widget before the replaced range if possible, helps with cursor behavior
+                    widget: new AdoAnchorButtonWidget(anchorType, id, plugin, view),
+                    side: -1 
                 })
             );
         }
@@ -810,17 +1051,17 @@ function epicAnchorDecorations(view: EditorView, plugin: ADOPlugin) {
     return builder.finish();
 }
 
-const epicAnchorViewPlugin = (plugin: ADOPlugin) => ViewPlugin.fromClass(
+const adoAnchorViewPlugin = (plugin: ADOPlugin) => ViewPlugin.fromClass( // Renamed
     class {
         decorations: DecorationSet;
 
-        constructor(currentView: EditorView) { // Renamed to avoid conflict with 'view' property in widget
-            this.decorations = epicAnchorDecorations(currentView, plugin);
+        constructor(currentView: EditorView) {
+            this.decorations = adoAnchorDecorations(currentView, plugin); // Use new function
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet) { // Added selectionSet for robustness
-                this.decorations = epicAnchorDecorations(update.view, plugin);
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = adoAnchorDecorations(update.view, plugin); // Use new function
             }
         }
     }, {

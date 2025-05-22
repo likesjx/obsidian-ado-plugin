@@ -23,6 +23,11 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
        - **Features Tab**: Lists child Features of the Epic. Each feature is an expandable item showing its ID, Title, and State in the header. Clicking a feature expands it to show its description. Each feature header also includes a direct link to open the item in ADO.
        - **Readiness Tab**: A tab for displaying readiness information from a custom field in ADO (e.g., `Custom.ReadinessFieldName`). The specific field name used for this tab is not yet configurable via the plugin settings UI.
    - Both views include an "Open Epic in ADO" button to directly navigate to the work item in Azure DevOps.
+- **Query Anchors & Results View**:
+  - Insert query anchors (e.g., `<<Q#QueryID>>`) into your notes using a command.
+  - Anchors render as clickable buttons in all modes (Editor, Reading, Live Preview).
+  - Clicking a query anchor executes the specified ADO query and displays results in a detailed table view.
+  - The results view includes links to ADO and a special "View Epic" button for epic work items.
 
 ## Installation
 
@@ -66,11 +71,41 @@ You can now insert an **Epic Anchor** in your notes:
 
 This is useful for quickly referencing Azure DevOps epics in your notes.
 
+#### Query Anchor Command & Results View
+
+You can insert an **ADO Query Anchor** into your notes to quickly execute Azure DevOps queries and view results within Obsidian.
+
+- **Syntax**: Query anchors use the format `<<Q#QueryID>>`, where `QueryID` can be a GUID of a saved query or a path to a saved query in Azure DevOps (e.g., "My Queries/My Favorite Bugs").
+- **"Insert ADO Query Anchor" Command**:
+    - Access this command from the command palette (Cmd+P or Ctrl+P).
+    - If you have text selected in the editor, the command will use the selected text as the `QueryID` and wrap it with `<<Q#` and `>>`.
+    - If no text is selected, a modal window will prompt you to enter the `QueryID`.
+- **Rendering and Interaction**:
+    - **Editor Mode**: Renders as a clickable button displaying "Query: QueryID".
+    - **Reading & Live Preview Modes**: Renders as a clickable button displaying "View Query: QueryID".
+    - **Functionality**: Clicking the button in any mode executes the Azure DevOps query associated with the `QueryID`.
+- **Query Results View**:
+    - After a query is executed, the results are displayed in a special modal window.
+    - **Table Display**: Work items are shown in a table format. Key columns include: ID, Work Item Type, Title, State, and Assigned To. Additional common fields are also fetched and available.
+    - **Horizontal Scrolling**: The table is horizontally scrollable to accommodate all columns if the data is too wide for the modal.
+    - **Actions Column**:
+        - **"Open in ADO"**: Each work item has a direct link to open it in Azure DevOps.
+        - **"View Epic"**: If a work item in the query results is an Epic, a "View Epic" button is available. Clicking this button opens the standard detailed epic view within Obsidian (the same interactive view used for `<<#EpicID>>` epic anchors).
+
+#### Execute Azure DevOps Query Command
+
+In addition to query anchors, you can directly execute a query without inserting an anchor into your notes:
+
+- Run the command **Execute Azure DevOps Query** from the command palette.
+- A modal will prompt you to enter the Query ID or Path.
+- Upon submission, the query is executed, and the results are displayed in the **Query Results View** modal described above.
+
 ### What the Plugin Does
 
 - Lets you manage Azure DevOps epics and features directly from Obsidian.
 - Stores your ADO credentials and preferences securely in your vault.
-- Provides a command to insert Epic Anchors for easy referencing.
+- Provides commands to insert Epic Anchors and Query Anchors for easy referencing and execution.
+- Offers a direct command to execute ADO queries and view results.
 - (If you add more commands or UI, they’ll appear in the command palette or as additional settings.)
 
 If you want to add more features or commands, edit the TypeScript source, run `npm run build`, and reload the plugin in Obsidian.

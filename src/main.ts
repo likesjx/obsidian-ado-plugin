@@ -82,6 +82,7 @@ export default class ADOPlugin extends Plugin {
                         }
                         const epicId = id; // Already validated as digits for epic type
 
+                        // SINGLE declaration and initialization block for container, header, contentArea
                         const container = document.createElement('div');
                         container.classList.add('ado-epic-view-container');
                         container.style.width = '100%'; // Attempt to take full width of its parent column
@@ -96,37 +97,13 @@ export default class ADOPlugin extends Plugin {
                         header.style.cursor = 'pointer';
                         header.style.backgroundColor = 'var(--background-secondary)';
                         header.style.borderBottom = '1px solid var(--background-modifier-border)';
-                        header.innerHTML = `<strong>Epic #${epicId}</strong> <span class="ado-epic-title-placeholder"></span> <span class="ado-epic-state-placeholder"></span> <span class="ado-epic-toggle-indicator" style="float: right; font-weight: normal; color: var(--text-muted);">[+] Expand</span>`;
-                        
-                        const contentArea = document.createElement('div');
-                        contentArea.classList.add('ado-epic-content');
-                        contentArea.style.display = 'none';
-                        contentArea.style.padding = '10px';
-                        contentArea.dataset.loaded = 'false';
-
-                        container.appendChild(header);
-                        container.appendChild(contentArea);
-
-                        const container = document.createElement('div');
-                        container.classList.add('ado-epic-view-container');
-                        container.style.width = '100%'; 
-                        container.style.marginBottom = '1em';
-                        container.style.border = '1px solid var(--background-modifier-border)';
-                        container.style.borderRadius = '5px';
-                        container.style.boxSizing = 'border-box';
-
-                        const header = document.createElement('div');
-                        header.classList.add('ado-epic-header');
-                        header.style.padding = '10px';
-                        header.style.cursor = 'pointer';
-                        header.style.backgroundColor = 'var(--background-secondary)';
-                        header.style.borderBottom = '1px solid var(--background-modifier-border)';
-                        // Use epicId (which is `id` for epics)
+                        // Correct innerHTML for default expanded state:
                         header.innerHTML = `<strong>Epic #${epicId}</strong> <span class="ado-epic-title-placeholder"></span> <span class="ado-epic-state-placeholder"></span> <span class="ado-epic-toggle-indicator" style="float: right; font-weight: normal; color: var(--text-muted);">[-] Collapse</span>`;
                         
                         const contentArea = document.createElement('div');
                         contentArea.classList.add('ado-epic-content');
-                        contentArea.style.display = 'block'; // Default to expanded
+                        // Correct style for default expanded state:
+                        contentArea.style.display = 'block'; 
                         contentArea.style.padding = '10px';
                         contentArea.dataset.loaded = 'false';
 
@@ -135,6 +112,7 @@ export default class ADOPlugin extends Plugin {
                         
                         replacementTarget.replaceWith(container);
                         
+                        // Call loadEpicContent immediately for default expansion
                         loadEpicContent(epicId, contentArea, header, this);
 
                         header.onclick = async () => {

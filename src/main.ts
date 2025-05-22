@@ -4,13 +4,15 @@ import { RangeSetBuilder } from "@codemirror/state";
 import ADOApi from './ado/api.js';
 import { EpicsManager } from './ado/epics.js';
 import { FeaturesManager } from './ado/features.js';
+import { QueriesManager } from './ado/queries.js'; // Import QueriesManager
 import SettingsTab from './ui/settingsTab.js';
-import { Epic, Feature } from './types/index.js'; // Added Feature
+import { Epic, Feature, WorkItemQueryResult } from './types/index.js'; // Added Feature and WorkItemQueryResult
 
 export default class ADOPlugin extends Plugin {
-    public adoApi!: ADOApi; // Changed from private to public
-    public epicsManager!: EpicsManager; // Changed from private to public
-    public featuresManager!: FeaturesManager; // Changed from private to public
+    public adoApi!: ADOApi;
+    public epicsManager!: EpicsManager;
+    public featuresManager!: FeaturesManager;
+    public queriesManager!: QueriesManager; // Added QueriesManager
     public settings: any;
 
     async onload() {
@@ -19,7 +21,8 @@ export default class ADOPlugin extends Plugin {
         this.adoApi = new ADOApi();
         // Pass settings to the managers
         this.epicsManager = new EpicsManager(this.adoApi, this.settings);
-        this.featuresManager = new FeaturesManager(this.adoApi, this.settings); // Proactively updated
+        this.featuresManager = new FeaturesManager(this.adoApi, this.settings);
+        this.queriesManager = new QueriesManager(this.adoApi, this.settings); // Instantiate QueriesManager
 
         this.addRibbonIcon('dice', 'Manage Epics', async () => {
             // Logic to manage epics
@@ -102,47 +105,33 @@ export default class ADOPlugin extends Plugin {
                         
                         replacementTarget.replaceWith(container);
 
+                        // Default to expanded view and load content immediately
+                        contentArea.style.display = 'block';
+                        const toggleIndicatorInitial = header.querySelector('.ado-epic-toggle-indicator') as HTMLElement;
+                        if (toggleIndicatorInitial) toggleIndicatorInitial.textContent = '[-] Collapse';
+                        
+                        // Call the new function to load epic content.
+                        // 'this' correctly refers to the ADOPlugin instance here.
+                        loadEpicContent(epicId, contentArea, header, this);
+
                         header.onclick = async () => {
-                            const isHidden = contentArea.style.display === 'none';
+                            const isCurrentlyHidden = contentArea.style.display === 'none';
                             const toggleIndicator = header.querySelector('.ado-epic-toggle-indicator') as HTMLElement;
 
-                            if (isHidden) { // Expanding
+                            if (isCurrentlyHidden) { // Expanding a previously collapsed one
                                 contentArea.style.display = 'block';
                                 if (toggleIndicator) toggleIndicator.textContent = '[-] Collapse';
-
+                                
+                                // If content wasn't loaded due to an initial error, attempt to load it again.
                                 if (contentArea.dataset.loaded === 'false') {
-                                    contentArea.innerHTML = '<em>Loading Epic details...</em>';
-                                    try {
-                                        if (!this.settings?.organizationUrl || !this.settings?.pat) {
-                                            new Notice('Azure DevOps connection details are not set.');
-                                            contentArea.innerHTML = '<p style="color:var(--text-error);">Error: ADO settings missing.</p>';
-                                            if (toggleIndicator) toggleIndicator.textContent = '[+] Expand (Error)';
-                                            return;
-                                        }
-                                        this.adoApi.setBaseUrl(this.settings.organizationUrl);
-                                        this.adoApi.setPersonalAccessToken(this.settings.pat);
-
-                                        const epicDetails = await this.epicsManager.fetchEpicById(epicId);
-                                        
-                                        const titlePlaceholder = header.querySelector('.ado-epic-title-placeholder') as HTMLElement;
-                                        const statePlaceholder = header.querySelector('.ado-epic-state-placeholder') as HTMLElement;
-                                        if (titlePlaceholder) titlePlaceholder.textContent = `: ${epicDetails.fields['System.Title'] || 'N/A'}`;
-                                        if (statePlaceholder) statePlaceholder.textContent = `[${epicDetails.fields['System.State'] || 'N/A'}]`;
-                                        
-                                        // Features will be fetched by buildEpicInnerHtml's onRender if not passed
-                                        const { html, onRender } = buildEpicInnerHtml(epicDetails, [], this, false); // Pass empty features, onRender will fetch
-                                        contentArea.innerHTML = html;
-                                        if (onRender) {
-                                            onRender(contentArea);
-                                        }
-                                        contentArea.dataset.loaded = 'true';
-
-                                    } catch (error) {
-                                        console.error(`Error fetching Epic #${epicId} for inline view:`, error);
-                                        contentArea.innerHTML = `<p style="color:var(--text-error);">Failed to load Epic #${epicId}. See console.</p>`;
-                                        new Notice(`Failed to load Epic #${epicId}.`);
-                                        if (toggleIndicator) toggleIndicator.textContent = '[+] Expand (Error)';
-                                    }
+                                    // 'this' inside header.onclick refers to the header HTMLElement,
+                                    // so we use 'this.plugin' if loadEpicContent was a method of ADOPlugin,
+                                    // or pass the plugin instance explicitly if it's a standalone function.
+                                    // Since registerMarkdownPostProcessor's callback has `this` as the plugin instance
+                                    // at the time of defining this onclick handler, we can capture it.
+                                    // However, loadEpicContent is now a standalone function, needing `this` (plugin) passed.
+                                    // The `this` from the outer scope of registerMarkdownPostProcessor is the plugin instance.
+                                    loadEpicContent(epicId, contentArea, header, this);
                                 }
                             } else { // Collapsing
                                 contentArea.style.display = 'none';
@@ -156,6 +145,36 @@ export default class ADOPlugin extends Plugin {
 
         console.log('Registering Epic Anchor Editor Extension');
         this.registerEditorExtension(epicAnchorViewPlugin(this));
+
+        // Register the Execute ADO Query command
+        this.addCommand({
+            id: 'execute-ado-query',
+            name: 'Execute Azure DevOps Query',
+            callback: async () => {
+                new QueryInputModal(this.app, async (queryIdOrPath: string) => {
+                    if (!queryIdOrPath) return;
+
+                    const loadingNotice = new Notice('Executing query...', 0); // Indefinite notice
+                    try {
+                        // Ensure ADO API is configured
+                        if (!this.settings?.organizationUrl || !this.settings?.pat) {
+                            new Notice('Azure DevOps connection details are not set in plugin settings.');
+                            return;
+                        }
+                        this.adoApi.setBaseUrl(this.settings.organizationUrl);
+                        this.adoApi.setPersonalAccessToken(this.settings.pat);
+                        
+                        const results = await this.queriesManager.executeQuery(queryIdOrPath);
+                        new QueryResultsModal(this.app, results, queryIdOrPath).open();
+                    } catch (error: any) {
+                        console.error(`Error executing query '${queryIdOrPath}':`, error);
+                        new Notice(`Failed to execute query: ${error.message || error}`);
+                    } finally {
+                        loadingNotice.hide(); // Hide the loading notice
+                    }
+                }).open();
+            }
+        });
     }
 
     async loadSettings() {
@@ -170,6 +189,58 @@ export default class ADOPlugin extends Plugin {
         // Cleanup logic if needed
     }
 }
+
+
+/**
+ * Asynchronously loads and renders the content for an Epic into a specified content area.
+ * @param epicId The ID of the Epic to load.
+ * @param contentArea The HTMLElement where the Epic's content should be rendered.
+ * @param header The HTMLElement of the Epic's header, used for updating title/state placeholders.
+ * @param plugin The ADOPlugin instance, used for accessing settings, API, and managers.
+ */
+async function loadEpicContent(epicId: string, contentArea: HTMLElement, header: HTMLElement, plugin: ADOPlugin) {
+    contentArea.innerHTML = '<em>Loading Epic details...</em>';
+    contentArea.dataset.loaded = 'false'; // Explicitly set to false before loading attempt
+    const toggleIndicator = header.querySelector('.ado-epic-toggle-indicator') as HTMLElement;
+
+    try {
+        if (!plugin.settings?.organizationUrl || !plugin.settings?.pat) {
+            new Notice('Azure DevOps connection details are not set.');
+            contentArea.innerHTML = '<p style="color:var(--text-error);">Error: ADO settings missing.</p>';
+            if (toggleIndicator && contentArea.style.display !== 'none') toggleIndicator.textContent = '[-] Collapse (Error)';
+            else if (toggleIndicator) toggleIndicator.textContent = '[+] Expand (Error)';
+            return;
+        }
+        plugin.adoApi.setBaseUrl(plugin.settings.organizationUrl);
+        plugin.adoApi.setPersonalAccessToken(plugin.settings.pat);
+
+        const epicDetails = await plugin.epicsManager.fetchEpicById(epicId);
+        
+        const titlePlaceholder = header.querySelector('.ado-epic-title-placeholder') as HTMLElement;
+        const statePlaceholder = header.querySelector('.ado-epic-state-placeholder') as HTMLElement;
+        if (titlePlaceholder) titlePlaceholder.textContent = `: ${epicDetails.fields['System.Title'] || 'N/A'}`;
+        if (statePlaceholder) statePlaceholder.textContent = `[${epicDetails.fields['System.State'] || 'N/A'}]`;
+        
+        const { html, onRender } = buildEpicInnerHtml(epicDetails, [], plugin, false);
+        contentArea.innerHTML = html;
+        if (onRender) {
+            onRender(contentArea);
+        }
+        contentArea.dataset.loaded = 'true';
+        // If it was showing error and now loaded, ensure indicator is correct for current state
+        if (toggleIndicator && contentArea.style.display !== 'none') toggleIndicator.textContent = '[-] Collapse';
+        else if (toggleIndicator) toggleIndicator.textContent = '[+] Expand';
+
+
+    } catch (error) {
+        console.error(`Error fetching Epic #${epicId} for inline view:`, error);
+        contentArea.innerHTML = `<p style="color:var(--text-error);">Failed to load Epic #${epicId}. See console.</p>`;
+        new Notice(`Failed to load Epic #${epicId}.`);
+        if (toggleIndicator && contentArea.style.display !== 'none') toggleIndicator.textContent = '[-] Collapse (Error)';
+        else if (toggleIndicator) toggleIndicator.textContent = '[+] Expand (Error)';
+    }
+}
+
 
 /**
  * Modal to prompt the user for an Epic number.
@@ -201,14 +272,107 @@ class EpicNumberModal extends Modal {
     }
 
     submit(value: string) {
-        if (!/^[0-9]+$/.test(value.trim())) {
-            new Notice('Please enter a valid number.');
+        const trimmedValue = value.trim();
+        if (!trimmedValue) { // Allow any non-empty string (GUID or path)
+            new Notice('Please enter a Query ID or Path.');
             return;
         }
         this.close();
-        this.onSubmit(value.trim());
+        this.onSubmit(trimmedValue);
     }
 }
+
+
+// --- Modal for Query Input ---
+class QueryInputModal extends Modal {
+    onSubmit: (queryIdOrPath: string) => void;
+
+    constructor(app: App, onSubmit: (queryIdOrPath: string) => void) {
+        super(app);
+        this.onSubmit = onSubmit;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl('h2', { text: 'Enter Query ID or Path' });
+
+        const input = contentEl.createEl('input', { 
+            type: 'text', 
+            placeholder: 'e.g., My Queries/My Query Name or a GUID' 
+        });
+        input.style.width = '100%';
+        input.style.marginBottom = '10px';
+        input.focus();
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.submit(input.value);
+            }
+        });
+
+        const submitBtn = contentEl.createEl('button', { text: 'Execute Query' });
+        submitBtn.onclick = () => this.submit(input.value);
+    }
+
+    submit(value: string) {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) {
+            new Notice('Please enter a Query ID or Path.');
+            return;
+        }
+        this.close();
+        this.onSubmit(trimmedValue);
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
+// --- Modal for Displaying Query Results ---
+class QueryResultsModal extends Modal {
+    constructor(app: App, private results: WorkItemQueryResult[], private queryIdOrPath: string) {
+        super(app);
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.classList.add('ado-query-results-modal');
+
+        contentEl.createEl('h2', { text: `Results for Query: ${this.queryIdOrPath}` });
+
+        if (this.results.length === 0) {
+            contentEl.createEl('p', { text: 'No results found.' });
+            return;
+        }
+
+        const listEl = contentEl.createEl('ul');
+        listEl.style.listStyle = 'none'; // Remove default bullet points
+        listEl.style.paddingLeft = '0'; // Remove default padding
+
+        this.results.forEach(item => {
+            const listItemEl = listEl.createEl('li');
+            listItemEl.style.marginBottom = '8px'; // Add some spacing between items
+            
+            const linkEl = listItemEl.createEl('a', {
+                href: item.adoUrl,
+                text: `[${item.type}] #${item.id}: ${item.title} (${item.state})`,
+                target: '_blank', // Open in new tab
+                rel: 'noopener noreferrer' // Security best practice
+            });
+            linkEl.style.textDecoration = 'none'; // Optional: remove underline from links
+        });
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
 
 /**
  * Inserts an Epic Anchor at the cursor or wraps the selected number.
@@ -397,38 +561,48 @@ function buildEpicInnerHtml(
         const orgUrl = pluginInstance.settings?.organizationUrl;
         const projectName = pluginInstance.settings?.projectName;
 
-        featuresToRender.forEach((feature, index) => {
+        featuresToRender.forEach((feature) => { // Removed index, not used
             const featureTitle = feature.fields['System.Title'] || 'Untitled Feature';
             const featureState = feature.fields['System.State'] || 'Unknown State';
-            const featureDescription = feature.fields['System.Description'] || 'No description available.';
             const featureId = feature.id;
 
             let featureHeaderHtml = `<div class="feature-header" data-feature-id="${featureId}" style="cursor: pointer; padding: 5px; border-bottom: 1px solid var(--background-modifier-border-hover);">`;
             featureHeaderHtml += `<strong>#${featureId}</strong>: ${featureTitle} [${featureState}]`;
+            
+            // The "Open in ADO" link can be part of the modal, or kept here for quick access.
+            // For now, let's keep it here for consistency with how it was, but it will also be in the modal.
             if (orgUrl && projectName) {
                 const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
                 const featureUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${featureId}`;
-                featureHeaderHtml += ` <a href="${featureUrl}" target="_blank" rel="noopener noreferrer" title="Open Feature #${featureId} in ADO" style="text-decoration: none; color: var(--interactive-accent); font-size: 0.85em;">(Open in ADO)</a>`;
+                featureHeaderHtml += ` <a href="${featureUrl}" target="_blank" rel="noopener noreferrer" title="Open Feature #${featureId} in ADO" style="text-decoration: none; color: var(--interactive-accent); font-size: 0.85em; margin-left: 5px;">(Open in ADO)</a>`;
             }
             featureHeaderHtml += `</div>`;
-
-            const contentId = `feature-content-${parentEpic.id}-${featureId}`;
-            let featureContentHtml = `<div id="${contentId}" class="feature-content" style="display: none; padding: 10px; margin-left: 15px; border-left: 2px solid var(--background-modifier-border); background-color: var(--background-primary-alt);">`;
-            featureContentHtml += `<div>${featureDescription}</div></div>`;
             
-            featuresHtml += `<li style="margin-bottom: 2px;">${featureHeaderHtml}${featureContentHtml}</li>`;
+            // Removed featureContentHtml as details will be in a modal
+            featuresHtml += `<li style="margin-bottom: 2px;">${featureHeaderHtml}</li>`;
         });
         featuresHtml += '</ul>';
         pane.innerHTML = featuresHtml;
 
-        // Add click listeners for feature expansion
+        // Add click listeners for opening feature detail modal
         pane.querySelectorAll('.feature-header').forEach(headerElement => {
             headerElement.addEventListener('click', (event) => {
-                if ((event.target as HTMLElement).tagName === 'A') return;
-                const clickedFeatureId = headerElement.getAttribute('data-feature-id');
-                const contentElement = pane.querySelector(`#feature-content-${parentEpic.id}-${clickedFeatureId}`) as HTMLElement | null;
-                if (contentElement) {
-                    contentElement.style.display = contentElement.style.display === 'none' ? 'block' : 'none';
+                // Prevent modal from opening if the "Open in ADO" link itself is clicked
+                if ((event.target as HTMLElement).closest('a')) {
+                    return;
+                }
+                event.preventDefault(); // Prevent any default action
+
+                const clickedFeatureIdStr = headerElement.getAttribute('data-feature-id');
+                if (!clickedFeatureIdStr) return;
+                const clickedFeatureId = parseInt(clickedFeatureIdStr, 10);
+
+                const featureToShow = featuresToRender.find(f => f.id === clickedFeatureId);
+                if (featureToShow) {
+                    new FeatureDetailModal(pluginInstance.app, featureToShow, pluginInstance).open();
+                } else {
+                    new Notice(`Could not find details for Feature #${clickedFeatureId}.`);
+                    console.error(`Feature with ID ${clickedFeatureId} not found in featuresToRender list.`);
                 }
             });
         });
@@ -460,6 +634,96 @@ class EpicDetailModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
     }
+}
+
+
+// --- Feature Modal Class ---
+class FeatureDetailModal extends Modal {
+    constructor(app: App, private feature: Feature, private plugin: ADOPlugin) {
+        super(app);
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.classList.add('ado-feature-modal-content');
+        
+        const { html } = buildFeatureInnerHtml(this.feature, this.plugin); // Call a new helper for feature HTML
+        contentEl.innerHTML = html;
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
+// --- Helper to build HTML for Feature Details (for Modal) ---
+function buildFeatureInnerHtml(
+    feature: Feature,
+    plugin: ADOPlugin
+): { html: string } {
+    const fields = feature.fields;
+    const featureTitle = fields['System.Title'] || 'N/A';
+    const featureState = fields['System.State'] || 'N/A';
+    const descriptionContent = fields['System.Description'] || 'No description available.';
+    const parentEpicId = fields['System.Parent'] ? `${fields['System.Parent']}` : 'N/A'; // Parent is just an ID
+
+    let html = `<div class="ado-feature-details-content" style="padding: 10px;">`;
+
+    // Header
+    html += `<h4 style="margin-top:0; margin-bottom:15px;">Feature #${feature.id}: ${featureTitle} [${featureState}]</h4>`;
+
+    // Description
+    html += `<div style="margin-bottom: 15px;">`;
+    html += `<strong style="display: block; margin-bottom: 5px;">Description:</strong>`;
+    html += `<div>${descriptionContent}</div>`; // Assuming description is HTML or pre-formatted text
+    html += `</div>`;
+
+    // Details Table
+    html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">`;
+
+    const identityFields = [
+        { label: 'Assigned To', fieldName: 'System.AssignedTo' },
+        { label: 'Created By', fieldName: 'System.CreatedBy' },
+        { label: 'Changed By', fieldName: 'System.ChangedBy' },
+    ];
+
+    identityFields.forEach(idf => {
+        const identity = fields[idf.fieldName] as import('./types/index.js').AdoIdentity | undefined;
+        html += `<tr><td style="padding: 5px 0; border-bottom: 1px solid var(--background-modifier-border); font-weight: bold; width: 120px;">${idf.label}:</td>`;
+        if (identity && identity.displayName) {
+            html += `<td style="padding: 5px 0; border-bottom: 1px solid var(--background-modifier-border);">${identity.displayName}`;
+            if (identity.uniqueName) {
+                const teamsLink = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(identity.uniqueName)}`;
+                html += ` <span style="color: var(--text-muted); font-size: 0.9em;">(<a href="${teamsLink}" target="_blank" rel="noopener noreferrer" title="Chat on Teams with ${identity.displayName} (${identity.uniqueName})">${identity.uniqueName}</a>)</span>`;
+            }
+            html += `</td>`;
+        } else {
+            html += `<td style="padding: 5px 0; border-bottom: 1px solid var(--background-modifier-border);">N/A</td>`;
+        }
+        html += `</tr>`;
+    });
+    
+    html += `<tr><td style="padding: 5px 0; border-bottom: 1px solid var(--background-modifier-border); font-weight: bold;">Parent Epic ID:</td><td style="padding: 5px 0; border-bottom: 1px solid var(--background-modifier-border);">${parentEpicId}</td></tr>`;
+    html += `<tr><td style="padding: 5px 0; border-bottom: 1px solid var(--background-modifier-border); font-weight: bold;">Created Date:</td><td style="padding: 5px 0; border-bottom: 1px solid var(--background-modifier-border);">${fields['System.CreatedDate'] ? new Date(fields['System.CreatedDate']).toLocaleDateString() : 'N/A'}</td></tr>`;
+    html += `<tr><td style="padding: 5px 0; font-weight: bold;">Changed Date:</td><td style="padding: 5px 0;">${fields['System.ChangedDate'] ? new Date(fields['System.ChangedDate']).toLocaleDateString() : 'N/A'}</td></tr>`;
+    
+    html += `</table>`;
+
+
+    // "Open in ADO" Button
+    const orgUrl = plugin.settings?.organizationUrl;
+    const projectName = plugin.settings?.projectName;
+    if (orgUrl && projectName) {
+        const normalizedOrgUrl = orgUrl.replace(/\/+$/, '');
+        const featureAdoUrl = `${normalizedOrgUrl}/${encodeURIComponent(projectName)}/_workitems/edit/${feature.id}`;
+        html += `<div style="margin-top:20px;"><a href="${featureAdoUrl}" class="external-link" target="_blank" rel="noopener noreferrer"><button style="padding:8px 15px;">Open Feature #${feature.id} in ADO</button></a></div>`;
+    }
+    
+    html += `</div>`; // end ado-feature-details-content
+
+    return { html };
 }
 
 

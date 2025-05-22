@@ -4,8 +4,8 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
 
 ## Features
 
-- **Manage Epics**: Create, update, and delete epics in Azure DevOps.
-- **Manage Features**: Create, update, and delete features associated with epics.
+- **Manage Epics**: Create, update, and delete epics in Azure DevOps. (Currently, viewing epics and their child features is fully supported. Full creation, update, and deletion capabilities from within Obsidian are under development.)
+- **Manage Features**: Create, update, and delete features associated with epics. (Currently, viewing epics and their child features is fully supported. Full creation, update, and deletion capabilities from within Obsidian are under development.)
 - **User Settings**: Customize plugin settings through a dedicated settings tab.
 - **Epic Anchors & Inline/Modal Views**:
    - Insert epic anchors (e.g., `<<#12345>>`) into your notes using a command.
@@ -21,7 +21,7 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
        - **Description Tab**: Shows the Epic's `System.Description`.
        - **Contacts Tab**: Displays key personnel (Assigned To, Created By, Changed By, and custom roles like Epic Owner). User email addresses are linked to Microsoft Teams for quick chat.
        - **Features Tab**: Lists child Features of the Epic. Each feature is an expandable item showing its ID, Title, and State in the header. Clicking a feature expands it to show its description. Each feature header also includes a direct link to open the item in ADO.
-       - **Readiness Tab**: A configurable tab for displaying readiness information related to the Epic.
+       - **Readiness Tab**: A tab for displaying readiness information from a custom field in ADO (e.g., `Custom.ReadinessFieldName`). The specific field name used for this tab is not yet configurable via the plugin settings UI.
    - Both views include an "Open Epic in ADO" button to directly navigate to the work item in Azure DevOps.
 
 ## Installation
@@ -47,7 +47,7 @@ This plugin integrates Azure DevOps (ADO) with Obsidian to manage epics and feat
    - **ADO Personal Access Token**: Enter your Azure DevOps PAT.
    - **ADO Organization URL**: Enter your Azure DevOps organization URL (e.g., `https://dev.azure.com/yourorganization`).
    - **ADO Project Name**: Enter the name of your Azure DevOps project (this is now required for the "Open in ADO" link in the epic popover).
-   - **Refresh Interval**: Set how often (in minutes) the plugin should refresh data from Azure DevOps.
+   - **Refresh Interval**: Set how often (in minutes) the plugin should refresh data from Azure DevOps. (Note: Automatic background refresh based on this interval is not yet implemented; data is fetched on demand when interacting with epics.)
 5. Your settings are saved automatically.
 
 
